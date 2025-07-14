@@ -1,0 +1,192 @@
+<div class="container mt-4">
+  <div class="row">
+    <div class="col-md-12">
+      <div class="card">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0">Estadísticas Avanzadas</h5>
+        </div>
+        <div class="card-body">
+          <!-- Filters -->
+          <div class="row mb-4">
+            <div class="col-md-12">
+              <div class="card">
+                <div class="card-header">
+                  <h6 class="mb-0">Filtros</h6>
+                </div>
+                <div class="card-body">
+                  <form [formGroup]="filterForm" (ngSubmit)="applyFilters()">
+                    <div class="row">
+                      <div class="col-md-3 mb-3">
+                        <label for="year" class="form-label">Año</label>
+                        <select class="form-select" id="year" formControlName="year">
+                          <option value="">Todos</option>
+                          <option *ngFor="let year of years" [value]="year">{{ year }}</option>
+                        </select>
+                      </div>
+                      <div class="col-md-3 mb-3">
+                        <label for="region" class="form-label">Comunidad Autónoma</label>
+                        <select class="form-select" id="region" formControlName="region">
+                          <option value="">Todas</option>
+                          <option *ngFor="let region of regions | keyvalue" [value]="region.key">{{ region.value }}</option>
+                        </select>
+                      </div>
+                      <div class="col-md-3 mb-3">
+                        <label for="contractType" class="form-label">Tipo de Contrato</label>
+                        <select class="form-select" id="contractType" formControlName="contractType">
+                          <option value="">Todos</option>
+                          <option value="1">Obras</option>
+                          <option value="2">Servicios</option>
+                          <option value="3">Suministros</option>
+                          <!-- Add more types as needed -->
+                        </select>
+                      </div>
+                      <div class="col-md-3 d-flex align-items-end">
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end w-100">
+                          <button type="button" class="btn btn-secondary" (click)="resetFilters()">🔁 Reset</button>
+                          <button type="submit" class="btn btn-primary">🔍 Aplicar</button>
+                        </div>
+                      </div>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Statistics Content -->
+          <div *ngIf="loading" class="text-center my-5">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Cargando...</span>
+            </div>
+            <p class="mt-2">Cargando estadísticas...</p>
+          </div>
+
+          <div *ngIf="error" class="alert alert-danger">
+            Error al cargar las estadísticas. Por favor, inténtelo de nuevo más tarde.
+          </div>
+
+          <div *ngIf="!loading && !error">
+            <!-- Summary KPIs -->
+            <div class="row mb-4">
+              <div class="col-md-4">
+                <div class="card text-center mb-3">
+                  <div class="card-header">Total de Contratos</div>
+                  <div class="card-body">
+                    <h2 class="card-title">{{ statistics.totalContracts || 0 }}</h2>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="card text-center mb-3">
+                  <div class="card-header">Importe Total Estimado</div>
+                  <div class="card-body">
+                    <h2 class="card-title">{{ formatCurrency(statistics.totalAmount || 0) }}</h2>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="card text-center mb-3">
+                  <div class="card-header">Organismos Distintos</div>
+                  <div class="card-body">
+                    <h2 class="card-title">{{ statistics.uniqueOrganisms || 0 }}</h2>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Charts -->
+            <div class="row">
+              <!-- Type Chart -->
+              <div class="col-md-4 mb-4">
+                <div class="card h-100">
+                  <div class="card-header">
+                    <h6 class="mb-0">Contratos por Tipo</h6>
+                  </div>
+                  <div class="card-body">
+                    <div class="chart-container">
+                      <canvas baseChart
+                        [data]="typeChartData"
+                        [type]="pieChartType"
+                        [options]="pieChartOptions">
+                      </canvas>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Status Chart -->
+              <div class="col-md-4 mb-4">
+                <div class="card h-100">
+                  <div class="card-header">
+                    <h6 class="mb-0">Contratos por Estado</h6>
+                  </div>
+                  <div class="card-body">
+                    <div class="chart-container">
+                      <canvas baseChart
+                        [data]="statusChartData"
+                        [type]="pieChartType"
+                        [options]="pieChartOptions">
+                      </canvas>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Source Chart -->
+              <div class="col-md-4 mb-4">
+                <div class="card h-100">
+                  <div class="card-header">
+                    <h6 class="mb-0">Contratos por Origen</h6>
+                  </div>
+                  <div class="card-body">
+                    <div class="chart-container">
+                      <canvas baseChart
+                        [data]="sourceChartData"
+                        [type]="pieChartType"
+                        [options]="pieChartOptions">
+                      </canvas>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Top Contracting Parties -->
+            <div class="row">
+              <div class="col-md-12">
+                <div class="card">
+                  <div class="card-header">
+                    <h6 class="mb-0">Top 10 Organismos Contratantes</h6>
+                  </div>
+                  <div class="card-body">
+                    <div class="table-responsive">
+                      <table class="table table-striped table-hover">
+                        <thead>
+                          <tr>
+                            <th>Organismo</th>
+                            <th>Número de Contratos</th>
+                            <th>Importe Total</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr *ngFor="let org of statistics.topOrganizations">
+                            <td>{{ org.name }}</td>
+                            <td>{{ org.contractCount }}</td>
+                            <td>{{ formatCurrency(org.totalAmount) }}</td>
+                          </tr>
+                          <tr *ngIf="!statistics.topOrganizations || statistics.topOrganizations.length === 0">
+                            <td colspan="3" class="text-center">No hay datos disponibles</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

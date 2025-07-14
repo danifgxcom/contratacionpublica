@@ -1,0 +1,48 @@
+/* Styles for the statistics component */
+
+/* Style for the card headers */
+.card-header {
+  background-color: #f8f9fa;
+}
+
+/* Style for the chart containers */
+.chart-container {
+  position: relative;
+  height: 250px;
+  width: 100%;
+}
+
+/* Style for the KPI cards */
+.card-title {
+  font-size: 2rem;
+  font-weight: 600;
+  margin-bottom: 0;
+}
+
+/* Style for the table */
+.table-responsive {
+  overflow-x: auto;
+}
+
+.table th {
+  background-color: #f8f9fa;
+}
+
+.table td {
+  vertical-align: middle;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .chart-container {
+    height: 200px;
+  }
+  
+  .card-title {
+    font-size: 1.5rem;
+  }
+  
+  .row.mb-4 .col-md-4:not(:last-child) {
+    margin-bottom: 1rem;
+  }
+}

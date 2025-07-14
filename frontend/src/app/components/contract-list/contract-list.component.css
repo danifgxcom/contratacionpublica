@@ -1,0 +1,55 @@
+/* Styles for the contract list component */
+
+.table-responsive {
+  overflow-x: auto;
+}
+
+.table th {
+  background-color: #f8f9fa;
+}
+
+.table td {
+  vertical-align: middle;
+}
+
+/* Limit text length in table cells */
+.table td {
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Style for the filter card */
+.card-header {
+  background-color: #f8f9fa;
+}
+
+/* Style for the export button */
+.btn-outline-success {
+  margin-left: 10px;
+}
+
+/* Autocomplete suggestions */
+.suggestion-item {
+  transition: background-color 0.2s ease;
+}
+
+.suggestion-item:hover {
+  background-color: #f8f9fa;
+}
+
+.suggestion-item:last-child {
+  border-bottom: none !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .d-md-flex {
+    margin-top: 1rem;
+  }
+  
+  .table td {
+    max-width: 150px;
+  }
+}

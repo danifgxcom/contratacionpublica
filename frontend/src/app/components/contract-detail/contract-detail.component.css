@@ -1,0 +1,45 @@
+/* Styles for the contract detail component */
+
+/* Style for the card headers */
+.card-header {
+  background-color: #f8f9fa;
+}
+
+/* Style for the description text */
+.card-body p {
+  white-space: pre-line;
+  line-height: 1.6;
+}
+
+/* Style for the XML content */
+.xml-content {
+  background-color: #f8f9fa;
+  padding: 15px;
+  border-radius: 5px;
+  max-height: 300px;
+  overflow-y: auto;
+  font-family: monospace;
+  font-size: 0.9rem;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+/* Style for definition lists */
+dl.row {
+  margin-bottom: 0;
+}
+
+dt {
+  font-weight: 600;
+}
+
+dd {
+  margin-bottom: 0.5rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .row.mb-4 .col-md-6:not(:last-child) {
+    margin-bottom: 1.5rem;
+  }
+}

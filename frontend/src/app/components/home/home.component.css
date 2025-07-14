@@ -1,0 +1,28 @@
+.jumbotron {
+  margin-bottom: 2rem;
+}
+
+.card {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transition: 0.3s;
+}
+
+.card:hover {
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+.card-header {
+  font-weight: bold;
+}
+
+.list-group-item {
+  transition: background-color 0.3s;
+}
+
+.list-group-item:hover {
+  background-color: #f8f9fa;
+}
+
+.badge {
+  font-size: 0.9rem;
+}
