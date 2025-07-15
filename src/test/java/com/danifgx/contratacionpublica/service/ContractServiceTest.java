@@ -1,178 +1,222 @@
 package com.danifgx.contratacionpublica.service;
 
 import com.danifgx.contratacionpublica.model.Contract;
-import com.danifgx.contratacionpublica.repository.ContractRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
-import java.time.LocalDateTime;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 /**
- * Tests for the ContractService class.
+ * Tests for the ContractService Facade class.
  */
-public class ContractServiceTest {
+@ExtendWith(MockitoExtension.class)
+class ContractServiceTest {
 
     @Mock
-    private ContractRepository contractRepository;
+    private ContractQueryService contractQueryService;
 
     @Mock
-    private ContractTypeService contractTypeService;
+    private ContractSearchService contractSearchService;
+
+    @Mock
+    private ContractStatisticsService contractStatisticsService;
 
     @InjectMocks
     private ContractService contractService;
 
+    private Contract testContract;
+    private UUID testId;
+
     @BeforeEach
-    public void setup() {
-        MockitoAnnotations.openMocks(this);
+    void setUp() {
+        testId = UUID.randomUUID();
+        testContract = new Contract();
+        testContract.setId(testId);
+        testContract.setTitle("Test Contract");
     }
 
-    /**
-     * Test that the getContractStatistics method handles null values correctly.
-     */
+    // Test Query Operations Delegation
     @Test
-    public void testGetContractStatistics_HandlesNullValues() {
-        // Mock data with null values
-        List<Object[]> typeCodeStats = Arrays.asList(
-                new Object[]{"1", 10L},
-                new Object[]{"2", 20L},
-                new Object[]{"Unknown", 5L}  // This represents null values that were replaced with "Unknown"
+    void getContractById_ShouldDelegateToQueryService() {
+        // Given
+        when(contractQueryService.findById(testId)).thenReturn(Optional.of(testContract));
+
+        // When
+        Optional<Contract> result = contractService.getContractById(testId);
+
+        // Then
+        assertTrue(result.isPresent());
+        assertEquals(testContract, result.get());
+        verify(contractQueryService).findById(testId);
+        verifyNoInteractions(contractSearchService, contractStatisticsService);
+    }
+
+    @Test
+    void getContractByExternalId_ShouldDelegateToQueryService() {
+        // Given
+        String externalId = "EXT-123";
+        when(contractQueryService.findByExternalId(externalId)).thenReturn(Optional.of(testContract));
+
+        // When
+        Optional<Contract> result = contractService.getContractByExternalId(externalId);
+
+        // Then
+        assertTrue(result.isPresent());
+        assertEquals(testContract, result.get());
+        verify(contractQueryService).findByExternalId(externalId);
+        verifyNoInteractions(contractSearchService, contractStatisticsService);
+    }
+
+    @Test
+    void getAllContracts_ShouldDelegateToQueryService() {
+        // Given
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<Contract> expectedPage = new PageImpl<>(List.of(testContract));
+        when(contractQueryService.findAll(pageable)).thenReturn(expectedPage);
+
+        // When
+        Page<Contract> result = contractService.getAllContracts(pageable);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(1, result.getTotalElements());
+        verify(contractQueryService).findAll(pageable);
+        verifyNoInteractions(contractSearchService, contractStatisticsService);
+    }
+
+    @Test
+    void getContractCount_ShouldDelegateToQueryService() {
+        // Given
+        when(contractQueryService.count()).thenReturn(42L);
+
+        // When
+        Long result = contractService.getContractCount();
+
+        // Then
+        assertEquals(42L, result);
+        verify(contractQueryService).count();
+        verifyNoInteractions(contractSearchService, contractStatisticsService);
+    }
+
+    // Test Search Operations Delegation
+    @Test
+    void searchContractsByTitle_ShouldDelegateToSearchService() {
+        // Given
+        String title = "Test";
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<Contract> expectedPage = new PageImpl<>(List.of(testContract));
+        when(contractSearchService.searchByTitle(title, pageable)).thenReturn(expectedPage);
+
+        // When
+        Page<Contract> result = contractService.searchContractsByTitle(title, pageable);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(1, result.getTotalElements());
+        verify(contractSearchService).searchByTitle(title, pageable);
+        verifyNoInteractions(contractQueryService, contractStatisticsService);
+    }
+
+    @Test
+    void getContractingPartyAutocomplete_ShouldDelegateToSearchService() {
+        // Given
+        String query = "Test";
+        List<String> expectedSuggestions = List.of("Test Organization");
+        when(contractSearchService.getContractingPartyAutocomplete(query)).thenReturn(expectedSuggestions);
+
+        // When
+        List<String> result = contractService.getContractingPartyAutocomplete(query);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertEquals("Test Organization", result.get(0));
+        verify(contractSearchService).getContractingPartyAutocomplete(query);
+        verifyNoInteractions(contractQueryService, contractStatisticsService);
+    }
+
+    // Test Statistics Operations Delegation
+    @Test
+    void getContractStatistics_ShouldDelegateToStatisticsService() {
+        // Given
+        Map<String, Object> expectedStats = Map.of("totalContracts", 100L);
+        when(contractStatisticsService.getComprehensiveStatistics()).thenReturn(expectedStats);
+
+        // When
+        Map<String, Object> result = contractService.getContractStatistics();
+
+        // Then
+        assertNotNull(result);
+        assertEquals(100L, result.get("totalContracts"));
+        verify(contractStatisticsService).getComprehensiveStatistics();
+        verifyNoInteractions(contractQueryService, contractSearchService);
+    }
+
+    @Test
+    void getStatisticsByAutonomousCommunity_ShouldDelegateToStatisticsService() {
+        // Given
+        List<Map<String, Object>> expectedStats = List.of(
+                Map.of("name", "Madrid", "contractCount", 40L)
         );
+        when(contractStatisticsService.getStatisticsByAutonomousCommunity()).thenReturn(expectedStats);
 
-        List<Object[]> statusStats = Arrays.asList(
-                new Object[]{"PUB", 15L},
-                new Object[]{"EV", 10L},
-                new Object[]{"Unknown", 10L}  // This represents null values that were replaced with "Unknown"
-        );
+        // When
+        List<Map<String, Object>> result = contractService.getStatisticsByAutonomousCommunity();
 
-        List<Object[]> sourceStats = Arrays.asList(
-                new Object[]{"perfiles", 20L},
-                new Object[]{"agregadas", 15L},
-                new Object[]{"Unknown", 5L}  // This represents null values that were replaced with "Unknown"
-        );
+        // Then
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertEquals("Madrid", result.get(0).get("name"));
+        verify(contractStatisticsService).getStatisticsByAutonomousCommunity();
+        verifyNoInteractions(contractQueryService, contractSearchService);
+    }
 
-        // Mock data for top contracting organizations, including a case with null totalAmount
-        List<Object[]> topOrganizations = Arrays.asList(
-                new Object[]{"Organization 1", 10L, 1000000.0},
-                new Object[]{"Organization 2", 8L, 800000.0},
-                new Object[]{"Organization 3", 5L, null}  // This organization has null totalAmount
-        );
+    @Test
+    void getDistinctYears_ShouldDelegateToStatisticsService() {
+        // Given
+        List<Integer> expectedYears = List.of(2023, 2022, 2021);
+        when(contractStatisticsService.getDistinctYears()).thenReturn(expectedYears);
 
-        // Mock data for autonomous communities statistics
-        List<Object[]> autonomousCommunityStats = Arrays.asList(
-                new Object[]{"Madrid", 25L, 2500000.0, 100000.0},
-                new Object[]{"Cataluña", 20L, 2000000.0, 100000.0},
-                new Object[]{"Andalucía", 15L, 1500000.0, 100000.0},
-                new Object[]{"Unknown", 5L, 0.0, 0.0}  // Unknown autonomous community
-        );
+        // When
+        List<Integer> result = contractService.getDistinctYears();
 
-        // Mock repository methods
-        when(contractRepository.count()).thenReturn(40L);
-        when(contractRepository.countByTypeCode()).thenReturn(typeCodeStats);
-        when(contractRepository.countByStatus()).thenReturn(statusStats);
-        when(contractRepository.countBySource()).thenReturn(sourceStats);
-        when(contractRepository.findTopContractingOrganizations()).thenReturn(topOrganizations);
-        when(contractRepository.countByAutonomousCommunity()).thenReturn(autonomousCommunityStats);
+        // Then
+        assertNotNull(result);
+        assertEquals(3, result.size());
+        assertEquals(expectedYears, result);
+        verify(contractStatisticsService).getDistinctYears();
+        verifyNoInteractions(contractQueryService, contractSearchService);
+    }
 
-        // Mock ContractTypeService behavior
-        when(contractTypeService.getDescriptionForCode("1")).thenReturn("Type 1 Description");
-        when(contractTypeService.getDescriptionForCode("2")).thenReturn("Type 2 Description");
-        when(contractTypeService.getDescriptionForCode("Unknown")).thenReturn("Unknown Type");
+    @Test
+    void getDistinctRegions_ShouldDelegateToStatisticsService() {
+        // Given
+        Map<String, String> expectedRegions = Map.of("ES30", "Madrid", "ES51", "Cataluña");
+        when(contractStatisticsService.getDistinctRegions()).thenReturn(expectedRegions);
 
-        // Call the service method
-        Map<String, Object> statistics = contractService.getContractStatistics();
+        // When
+        Map<String, String> result = contractService.getDistinctRegions();
 
-        // Verify the results
-        System.out.println("[DEBUG_LOG] Statistics: " + statistics);
-
-        assertNotNull(statistics);
-        assertEquals(40L, statistics.get("totalContracts"));
-
-        Map<String, Map<String, Object>> countByTypeCode = (Map<String, Map<String, Object>>) statistics.get("countByTypeCode");
-        assertNotNull(countByTypeCode);
-        assertEquals(3, countByTypeCode.size());
-
-        // Check type code 1
-        Map<String, Object> type1 = countByTypeCode.get("1");
-        assertNotNull(type1);
-        assertEquals(10L, type1.get("count"));
-        assertEquals("Type 1 Description", type1.get("description"));
-
-        // Check type code 2
-        Map<String, Object> type2 = countByTypeCode.get("2");
-        assertNotNull(type2);
-        assertEquals(20L, type2.get("count"));
-        assertEquals("Type 2 Description", type2.get("description"));
-
-        // Check Unknown type code
-        Map<String, Object> typeUnknown = countByTypeCode.get("Unknown");
-        assertNotNull(typeUnknown);
-        assertEquals(5L, typeUnknown.get("count"));
-        assertEquals("Unknown Type", typeUnknown.get("description"));
-
-        Map<String, Long> countByStatus = (Map<String, Long>) statistics.get("countByStatus");
-        assertNotNull(countByStatus);
-        assertEquals(3, countByStatus.size());
-        assertEquals(15L, countByStatus.get("PUB"));
-        assertEquals(10L, countByStatus.get("EV"));
-        assertEquals(10L, countByStatus.get("Unknown"));
-
-        Map<String, Long> countBySource = (Map<String, Long>) statistics.get("countBySource");
-        assertNotNull(countBySource);
-        assertEquals(3, countBySource.size());
-        assertEquals(20L, countBySource.get("perfiles"));
-        assertEquals(15L, countBySource.get("agregadas"));
-        assertEquals(5L, countBySource.get("Unknown"));
-
-        // Verify topOrganizations, including the case with null totalAmount
-        List<Map<String, Object>> topOrgs = (List<Map<String, Object>>) statistics.get("topOrganizations");
-        assertNotNull(topOrgs);
-        assertEquals(3, topOrgs.size());
-
-        // Check first organization
-        assertEquals("Organization 1", topOrgs.get(0).get("name"));
-        assertEquals(10L, topOrgs.get(0).get("contractCount"));
-        assertEquals(1000000.0, topOrgs.get(0).get("totalAmount"));
-
-        // Check third organization with null totalAmount
-        assertEquals("Organization 3", topOrgs.get(2).get("name"));
-        assertEquals(5L, topOrgs.get(2).get("contractCount"));
-        assertEquals(null, topOrgs.get(2).get("totalAmount"));
-
-        // Verify autonomous communities statistics
-        List<Map<String, Object>> autonomousCommunities = (List<Map<String, Object>>) statistics.get("countByAutonomousCommunity");
-        assertNotNull(autonomousCommunities);
-        assertEquals(4, autonomousCommunities.size());
-
-        // Check Madrid
-        Map<String, Object> madrid = autonomousCommunities.get(0);
-        assertEquals("Madrid", madrid.get("name"));
-        assertEquals(25L, madrid.get("contractCount"));
-        assertEquals(2500000.0, madrid.get("totalAmount"));
-        assertEquals(100000.0, madrid.get("averageAmount"));
-
-        // Check Cataluña
-        Map<String, Object> cataluna = autonomousCommunities.get(1);
-        assertEquals("Cataluña", cataluna.get("name"));
-        assertEquals(20L, cataluna.get("contractCount"));
-        assertEquals(2000000.0, cataluna.get("totalAmount"));
-        assertEquals(100000.0, cataluna.get("averageAmount"));
-
-        // Check Unknown autonomous community
-        Map<String, Object> unknown = autonomousCommunities.get(3);
-        assertEquals("Unknown", unknown.get("name"));
-        assertEquals(5L, unknown.get("contractCount"));
-        assertEquals(0.0, unknown.get("totalAmount"));
-        assertEquals(0.0, unknown.get("averageAmount"));
+        // Then
+        assertNotNull(result);
+        assertEquals(2, result.size());
+        assertEquals("Madrid", result.get("ES30"));
+        assertEquals("Cataluña", result.get("ES51"));
+        verify(contractStatisticsService).getDistinctRegions();
+        verifyNoInteractions(contractQueryService, contractSearchService);
     }
 }

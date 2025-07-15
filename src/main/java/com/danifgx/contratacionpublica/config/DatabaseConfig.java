@@ -8,22 +8,14 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.jdbc.support.JdbcTransactionManager;
-import org.springframework.retry.annotation.EnableRetry;
-import org.springframework.retry.backoff.ExponentialBackOffPolicy;
-import org.springframework.retry.policy.SimpleRetryPolicy;
-import org.springframework.retry.support.RetryTemplate;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import javax.sql.DataSource;
-import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Configuration class for database-related beans.
  */
 @Configuration
-@EnableRetry
 @Slf4j
 public class DatabaseConfig {
 
@@ -79,29 +71,4 @@ public class DatabaseConfig {
         return new JdbcTransactionManager(dataSource);
     }
 
-    /**
-     * Creates a RetryTemplate that can be used to retry database operations
-     * if they fail due to connection issues.
-     */
-    @Bean
-    public RetryTemplate retryTemplate() {
-        RetryTemplate retryTemplate = new RetryTemplate();
-
-        // Configure retry policy
-        Map<Class<? extends Throwable>, Boolean> retryableExceptions = new HashMap<>();
-        retryableExceptions.put(SQLException.class, true);
-        retryableExceptions.put(Exception.class, true);
-        SimpleRetryPolicy retryPolicy = new SimpleRetryPolicy(5, retryableExceptions);
-        retryTemplate.setRetryPolicy(retryPolicy);
-
-        // Configure backoff policy
-        ExponentialBackOffPolicy backOffPolicy = new ExponentialBackOffPolicy();
-        backOffPolicy.setInitialInterval(1000); // 1 second
-        backOffPolicy.setMultiplier(2.0);
-        backOffPolicy.setMaxInterval(10000); // 10 seconds
-        retryTemplate.setBackOffPolicy(backOffPolicy);
-
-        log.info("RetryTemplate configured with max attempts: {}", retryPolicy.getMaxAttempts());
-        return retryTemplate;
-    }
 }

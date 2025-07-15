@@ -132,7 +132,7 @@ export class SpainMapComponent implements OnInit, AfterViewInit {
         console.log('GeoJSON data parsed successfully');
 
         try {
-          // Filter features for peninsula map (exclude Canary Islands)
+          // Filter features for peninsula map (exclude only Canary Islands, include Ceuta and Melilla)
           const peninsulaFeatures = geoJsonData.features.filter((feature: any) => 
             feature.properties.acom_name !== 'Canarias'
           );
@@ -154,9 +154,9 @@ export class SpainMapComponent implements OnInit, AfterViewInit {
           // Fit peninsula map to bounds with maximum zoom and show North Africa
           if (this.geoJsonLayer.getBounds().isValid()) {
             const bounds = this.geoJsonLayer.getBounds();
-            // Extend bounds slightly south to include North Africa (for Ceuta and Melilla)
+            // Extend bounds to include North Africa (for Ceuta and Melilla)
             const extendedBounds = L.latLngBounds(
-              [bounds.getSouth() - 0.3, bounds.getWest()], // Smaller extension south
+              [35.0, bounds.getWest()], // Extend to latitude 35° to include Ceuta and Melilla
               [bounds.getNorth(), bounds.getEast()]
             );
             this.map.fitBounds(extendedBounds, {

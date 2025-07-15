@@ -1,304 +1,90 @@
 package com.danifgx.contratacionpublica.service;
 
 import com.danifgx.contratacionpublica.model.Contract;
-import com.danifgx.contratacionpublica.repository.ContractRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 /**
- * Service for handling contract operations.
+ * Facade service for contract operations.
+ * Delegates to specialized services following the Facade pattern.
  */
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class ContractService {
 
-    private final ContractRepository contractRepository;
-    private final ContractTypeService contractTypeService;
+    private final ContractQueryService contractQueryService;
+    private final ContractSearchService contractSearchService;
+    private final ContractStatisticsService contractStatisticsService;
 
-    /**
-     * Get a contract by its ID.
-     *
-     * @param id the ID of the contract
-     * @return the contract if found
-     */
-    @Transactional(readOnly = true)
+    // Query operations - delegate to ContractQueryService
     public Optional<Contract> getContractById(UUID id) {
-        return contractRepository.findById(id);
+        return contractQueryService.findById(id);
     }
 
-    /**
-     * Get a contract by its external ID.
-     *
-     * @param externalId the external ID of the contract
-     * @return the contract if found
-     */
-    @Transactional(readOnly = true)
     public Optional<Contract> getContractByExternalId(String externalId) {
-        return contractRepository.findByExternalId(externalId);
+        return contractQueryService.findByExternalId(externalId);
     }
 
-    /**
-     * Get all contracts with pagination.
-     *
-     * @param pageable the pagination information
-     * @return a page of contracts
-     */
-    @Transactional(readOnly = true)
     public Page<Contract> getAllContracts(Pageable pageable) {
-        return contractRepository.findAll(pageable);
+        return contractQueryService.findAll(pageable);
     }
 
-    /**
-     * Search contracts by title with pagination.
-     *
-     * @param title the title to search for
-     * @param pageable the pagination information
-     * @return a page of contracts
-     */
-    @Transactional(readOnly = true)
-    public Page<Contract> searchContractsByTitle(String title, Pageable pageable) {
-        return contractRepository.findByTitleContainingIgnoreCase(title, pageable);
-    }
-
-    /**
-     * Search contracts by contracting party name with pagination.
-     *
-     * @param contractingPartyName the contracting party name to search for
-     * @param pageable the pagination information
-     * @return a page of contracts
-     */
-    @Transactional(readOnly = true)
-    public Page<Contract> searchContractsByContractingPartyName(String contractingPartyName, Pageable pageable) {
-        return contractRepository.findByContractingPartyNameContainingIgnoreCase(contractingPartyName, pageable);
-    }
-
-    /**
-     * Find contracts by source with pagination.
-     *
-     * @param source the source of the contract data (perfiles or agregadas)
-     * @param pageable the pagination information
-     * @return a page of contracts
-     */
-    @Transactional(readOnly = true)
-    public Page<Contract> findContractsBySource(String source, Pageable pageable) {
-        return contractRepository.findBySource(source, pageable);
-    }
-
-    /**
-     * Find contracts by country subentity (autonomous community) with pagination.
-     *
-     * @param countrySubentity the autonomous community name
-     * @param pageable the pagination information
-     * @return a page of contracts
-     */
-    @Transactional(readOnly = true)
-    public Page<Contract> findContractsByCountrySubentity(String countrySubentity, Pageable pageable) {
-        return contractRepository.findByCountrySubentityContainingIgnoreCase(countrySubentity, pageable);
-    }
-
-    /**
-     * Get statistics about contracts.
-     *
-     * @return a map of statistics
-     */
-    @Transactional(readOnly = true)
-    public Map<String, Object> getContractStatistics() {
-        long totalContracts = contractRepository.count();
-
-        // Count by type code with descriptions
-        Map<String, Object> countByTypeCode = contractRepository.countByTypeCode().stream()
-                .collect(Collectors.toMap(
-                        arr -> (String) arr[0],
-                        arr -> {
-                            String code = (String) arr[0];
-                            Long count = (Long) arr[1];
-                            String description = contractTypeService.getDescriptionForCode(code);
-                            return Map.of(
-                                    "count", count,
-                                    "description", description
-                            );
-                        }
-                ));
-
-        // Count by status
-        Map<String, Long> countByStatus = contractRepository.countByStatus().stream()
-                .collect(Collectors.toMap(
-                        arr -> (String) arr[0],
-                        arr -> (Long) arr[1]
-                ));
-
-        // Count by source
-        Map<String, Long> countBySource = contractRepository.countBySource().stream()
-                .collect(Collectors.toMap(
-                        arr -> (String) arr[0],
-                        arr -> (Long) arr[1]
-                ));
-
-        // Top contracting organizations
-        List<Map<String, Object>> topOrganizations = contractRepository.findTopContractingOrganizations().stream()
-                .map(arr -> {
-                    Map<String, Object> orgMap = new java.util.HashMap<>();
-                    orgMap.put("name", arr[0]);
-                    orgMap.put("contractCount", arr[1]);
-                    orgMap.put("totalAmount", arr[2]);
-                    orgMap.put("contractsWithAmount", arr[3]);
-                    orgMap.put("contractsWithoutAmount", arr[4]);
-                    return orgMap;
-                })
-                .collect(Collectors.toList());
-
-        // Count by autonomous community
-        List<Map<String, Object>> countByAutonomousCommunity = contractRepository.countByAutonomousCommunity().stream()
-                .map(arr -> {
-                    Map<String, Object> communityMap = new java.util.HashMap<>();
-                    communityMap.put("name", arr[0]);
-                    communityMap.put("contractCount", arr[1]);
-                    communityMap.put("totalAmount", arr[2]);
-                    communityMap.put("averageAmount", arr[3]);
-                    return communityMap;
-                })
-                .collect(Collectors.toList());
-
-        return Map.of(
-                "totalContracts", totalContracts,
-                "countByTypeCode", countByTypeCode,
-                "countByStatus", countByStatus,
-                "countBySource", countBySource,
-                "topOrganizations", topOrganizations,
-                "countByAutonomousCommunity", countByAutonomousCommunity
-        );
-    }
-
-    /**
-     * Get the count of contracts in the database.
-     *
-     * @return the count of contracts
-     */
-    @Transactional(readOnly = true)
     public Long getContractCount() {
-        return contractRepository.count();
+        return contractQueryService.count();
     }
 
-    /**
-     * Get distinct years from contract updated dates.
-     *
-     * @return a list of distinct years
-     */
-    @Transactional(readOnly = true)
-    public List<Integer> getDistinctYears() {
-        return contractRepository.findDistinctYears();
+    // Search operations - delegate to ContractSearchService
+    public Page<Contract> searchContractsByTitle(String title, Pageable pageable) {
+        return contractSearchService.searchByTitle(title, pageable);
     }
 
-    /**
-     * Get distinct regions (NUTS codes and names).
-     *
-     * @return a map of region codes to names
-     */
-    @Transactional(readOnly = true)
-    public Map<String, String> getDistinctRegions() {
-        return contractRepository.findDistinctRegions().stream()
-                .collect(Collectors.toMap(
-                        arr -> (String) arr[0],  // NUTS code
-                        arr -> (String) arr[1],  // Region name
-                        (existing, replacement) -> existing  // In case of duplicate keys, keep the existing one
-                ));
+    public Page<Contract> searchContractsByContractingPartyName(String contractingPartyName, Pageable pageable) {
+        return contractSearchService.searchByContractingPartyName(contractingPartyName, pageable);
     }
 
-    /**
-     * Get statistics by autonomous community.
-     *
-     * @return a list of statistics by autonomous community
-     */
-    @Transactional(readOnly = true)
-    public List<Map<String, Object>> getStatisticsByAutonomousCommunity() {
-        return contractRepository.countByAutonomousCommunity().stream()
-                .map(arr -> {
-                    Map<String, Object> communityMap = new java.util.HashMap<>();
-                    communityMap.put("name", arr[0]);
-                    communityMap.put("contractCount", arr[1]);
-                    communityMap.put("totalAmount", arr[2]);
-                    communityMap.put("averageAmount", arr[3]);
-                    return communityMap;
-                })
-                .collect(Collectors.toList());
+    public Page<Contract> findContractsBySource(String source, Pageable pageable) {
+        return contractSearchService.searchBySource(source, pageable);
     }
 
-    /**
-     * Get autocomplete suggestions for contracting party names.
-     *
-     * @param query the search query
-     * @return a list of matching contracting party names
-     */
-    @Transactional(readOnly = true)
-    public List<String> getContractingPartyAutocomplete(String query) {
-        List<String> results = contractRepository.findContractingPartyNamesByQuery(query);
-        
-        // Sort to prioritize names that start with the query
-        String lowerQuery = query.toLowerCase();
-        return results.stream()
-                .sorted((a, b) -> {
-                    boolean aStartsWith = a.toLowerCase().startsWith(lowerQuery);
-                    boolean bStartsWith = b.toLowerCase().startsWith(lowerQuery);
-                    
-                    if (aStartsWith && !bStartsWith) return -1;
-                    if (!aStartsWith && bStartsWith) return 1;
-                    return a.compareToIgnoreCase(b);
-                })
-                .collect(Collectors.toList());
+    public Page<Contract> findContractsByCountrySubentity(String countrySubentity, Pageable pageable) {
+        return contractSearchService.searchByCountrySubentity(countrySubentity, pageable);
     }
 
-    /**
-     * Get global search autocomplete suggestions from multiple fields.
-     *
-     * @param query the search query
-     * @return a list of matching suggestions with their types
-     */
-    @Transactional(readOnly = true)
-    public List<Map<String, String>> getGlobalAutocomplete(String query) {
-        List<Map<String, String>> results = contractRepository.findGlobalAutocomplete(query);
-        
-        // Sort to prioritize exact matches and then alphabetically
-        String lowerQuery = query.toLowerCase();
-        return results.stream()
-                .sorted((a, b) -> {
-                    String aText = a.get("text").toLowerCase();
-                    String bText = b.get("text").toLowerCase();
-                    
-                    boolean aStartsWith = aText.startsWith(lowerQuery);
-                    boolean bStartsWith = bText.startsWith(lowerQuery);
-                    
-                    if (aStartsWith && !bStartsWith) return -1;
-                    if (!aStartsWith && bStartsWith) return 1;
-                    
-                    // Then sort by type (titles first, then contracting parties)
-                    int typeComparison = a.get("type").compareTo(b.get("type"));
-                    if (typeComparison != 0) return typeComparison;
-                    
-                    return aText.compareToIgnoreCase(bText);
-                })
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * Global search in multiple fields (title, contracting party name).
-     *
-     * @param query the search query
-     * @param pageable pagination parameters
-     * @return a page of contracts matching the query
-     */
-    @Transactional(readOnly = true)
     public Page<Contract> globalSearch(String query, Pageable pageable) {
-        return contractRepository.findByGlobalSearch(query, pageable);
+        return contractSearchService.globalSearch(query, pageable);
+    }
+
+    public List<String> getContractingPartyAutocomplete(String query) {
+        return contractSearchService.getContractingPartyAutocomplete(query);
+    }
+
+    public List<Map<String, String>> getGlobalAutocomplete(String query) {
+        return contractSearchService.getGlobalAutocomplete(query);
+    }
+
+    // Statistics operations - delegate to ContractStatisticsService
+    public Map<String, Object> getContractStatistics() {
+        return contractStatisticsService.getComprehensiveStatistics();
+    }
+
+    public List<Map<String, Object>> getStatisticsByAutonomousCommunity() {
+        return contractStatisticsService.getStatisticsByAutonomousCommunity();
+    }
+
+    public List<Integer> getDistinctYears() {
+        return contractStatisticsService.getDistinctYears();
+    }
+
+    public Map<String, String> getDistinctRegions() {
+        return contractStatisticsService.getDistinctRegions();
     }
 }

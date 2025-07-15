@@ -377,15 +377,15 @@ export class ContractListComponent implements OnInit {
     
     if (existingIndex === -1) {
       // First click: add ascending
-      this.sortColumns.push({ field, direction: 'asc' });
+      this.sortColumns = [{ field, direction: 'asc' }]; // Replace existing sorts
     } else {
       const currentDirection = this.sortColumns[existingIndex].direction;
       if (currentDirection === 'asc') {
         // Second click: change to descending
         this.sortColumns[existingIndex].direction = 'desc';
       } else {
-        // Third click: remove from sorting
-        this.sortColumns.splice(existingIndex, 1);
+        // Third click: change back to ascending
+        this.sortColumns[existingIndex].direction = 'asc';
       }
     }
     
@@ -480,7 +480,7 @@ export class ContractListComponent implements OnInit {
    * Format currency
    */
   formatCurrency(amount: number | null): string {
-    if (amount === null || amount === undefined) {
+    if (amount === null || amount === undefined || amount === 0) {
       return 'Sin importe';
     }
     return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(amount);

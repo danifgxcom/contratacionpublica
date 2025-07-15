@@ -12,6 +12,7 @@ import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.Query;
 
 /**
  * Repository for Contract entity.
@@ -222,5 +223,18 @@ public interface ContractRepository extends JpaRepository<Contract, UUID> {
            "LOWER(c.title) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
            "LOWER(c.contractingPartyName) LIKE LOWER(CONCAT('%', :query, '%'))")
     Page<Contract> findByGlobalSearch(@Param("query") String query, Pageable pageable);
+
+    /**
+     * Find all contracts ordered by effective amount (COALESCE of totalAmount, taxExclusiveAmount, estimatedAmount).
+     * This handles the case where we need to sort by the "real" amount displayed to users.
+     *
+     * @param pageable pagination parameters
+     * @return a page of contracts ordered by effective amount
+     */
+    @Query("SELECT c FROM Contract c ORDER BY COALESCE(c.totalAmount, c.taxExclusiveAmount, c.estimatedAmount) ASC NULLS LAST")
+    Page<Contract> findAllOrderByEffectiveAmountAsc(Pageable pageable);
+
+    @Query("SELECT c FROM Contract c ORDER BY COALESCE(c.totalAmount, c.taxExclusiveAmount, c.estimatedAmount) DESC NULLS LAST")
+    Page<Contract> findAllOrderByEffectiveAmountDesc(Pageable pageable);
 
 }

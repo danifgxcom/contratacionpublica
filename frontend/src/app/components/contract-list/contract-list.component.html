@@ -134,11 +134,11 @@
                             <small *ngIf="getSortOrder('updatedAt') > 0" class="sort-order">{{ getSortOrder('updatedAt') }}</small>
                           </span>
                         </th>
-                        <th class="sortable-column" (click)="onColumnClick('totalAmount')">
+                        <th class="sortable-column" (click)="onColumnClick('estimatedAmount')">
                           Importe
                           <span class="sort-indicator">
-                            {{ getSortIcon('totalAmount') }}
-                            <small *ngIf="getSortOrder('totalAmount') > 0" class="sort-order">{{ getSortOrder('totalAmount') }}</small>
+                            {{ getSortIcon('estimatedAmount') }}
+                            <small *ngIf="getSortOrder('estimatedAmount') > 0" class="sort-order">{{ getSortOrder('estimatedAmount') }}</small>
                           </span>
                         </th>
                         <th class="sortable-column" (click)="onColumnClick('status')">
