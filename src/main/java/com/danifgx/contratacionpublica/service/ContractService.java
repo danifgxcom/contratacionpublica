@@ -245,4 +245,48 @@ public class ContractService {
                 })
                 .collect(Collectors.toList());
     }
+
+    /**
+     * Get global search autocomplete suggestions from multiple fields.
+     *
+     * @param query the search query
+     * @return a list of matching suggestions with their types
+     */
+    @Transactional(readOnly = true)
+    public List<Map<String, String>> getGlobalAutocomplete(String query) {
+        List<Map<String, String>> results = contractRepository.findGlobalAutocomplete(query);
+        
+        // Sort to prioritize exact matches and then alphabetically
+        String lowerQuery = query.toLowerCase();
+        return results.stream()
+                .sorted((a, b) -> {
+                    String aText = a.get("text").toLowerCase();
+                    String bText = b.get("text").toLowerCase();
+                    
+                    boolean aStartsWith = aText.startsWith(lowerQuery);
+                    boolean bStartsWith = bText.startsWith(lowerQuery);
+                    
+                    if (aStartsWith && !bStartsWith) return -1;
+                    if (!aStartsWith && bStartsWith) return 1;
+                    
+                    // Then sort by type (titles first, then contracting parties)
+                    int typeComparison = a.get("type").compareTo(b.get("type"));
+                    if (typeComparison != 0) return typeComparison;
+                    
+                    return aText.compareToIgnoreCase(bText);
+                })
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Global search in multiple fields (title, contracting party name).
+     *
+     * @param query the search query
+     * @param pageable pagination parameters
+     * @return a page of contracts matching the query
+     */
+    @Transactional(readOnly = true)
+    public Page<Contract> globalSearch(String query, Pageable pageable) {
+        return contractRepository.findByGlobalSearch(query, pageable);
+    }
 }

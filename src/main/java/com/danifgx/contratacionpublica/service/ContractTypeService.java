@@ -121,20 +121,35 @@ public class ContractTypeService {
             return;
         }
 
-        // Define known contract types based on the issue description
+        // Define known contract types based on official Spanish procurement system
         Map<String, String> knownTypes = new HashMap<>();
+        // Basic types (original PLACSP)
+        knownTypes.put("1", "Obras");
+        knownTypes.put("2", "Servicios");
+        knownTypes.put("3", "Suministros");
+        knownTypes.put("4", "Concesión de obras");
+        knownTypes.put("5", "Concesión de servicios");
+        knownTypes.put("6", "Administrativo especial");
+        knownTypes.put("7", "Privado");
+        knownTypes.put("8", "Patrimonial");
+        
+        // Two-digit format (extended)
         knownTypes.put("01", "Obras");
-        knownTypes.put("02", "Suministros");
-        knownTypes.put("03", "Servicios");
+        knownTypes.put("02", "Servicios");
+        knownTypes.put("03", "Suministros");
         knownTypes.put("04", "Concesión de obras");
         knownTypes.put("05", "Concesión de servicios");
-        knownTypes.put("06", "Contratos mixtos");
-        knownTypes.put("21", "Administrativo especial");
-        knownTypes.put("22", "Sujeto a regulación armonizada");
-        knownTypes.put("31", "Contrato subvencionado");
-        knownTypes.put("32", "Derivado de acuerdo marco");
-        knownTypes.put("50", "Asociación público-privada");
-        knownTypes.put("99", "Otro o sin especificar");
+        knownTypes.put("06", "Administrativo especial");
+        knownTypes.put("07", "Privado");
+        knownTypes.put("08", "Patrimonial");
+        
+        // Extended official types
+        knownTypes.put("21", "Gestión de servicios públicos");
+        knownTypes.put("22", "Concesión de servicios");
+        knownTypes.put("31", "Concesión de obras públicas");
+        knownTypes.put("32", "Concesión de obras");
+        knownTypes.put("50", "Patrimonial");
+        knownTypes.put("99", "Otro o mixto");
         knownTypes.put("999", "No clasificado / error / legacy");
 
         // Save known contract types

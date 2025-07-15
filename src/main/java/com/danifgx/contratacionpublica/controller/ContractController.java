@@ -99,6 +99,32 @@ public class ContractController {
     }
 
     /**
+     * Get global search autocomplete suggestions.
+     *
+     * @param query the search query (minimum 3 characters)
+     * @return a list of matching suggestions from multiple fields
+     */
+    @GetMapping("/autocomplete/global")
+    public ResponseEntity<List<Map<String, String>>> getGlobalAutocomplete(@RequestParam String query) {
+        if (query.length() < 3) {
+            return ResponseEntity.ok(Collections.emptyList());
+        }
+        return ResponseEntity.ok(contractService.getGlobalAutocomplete(query));
+    }
+
+    /**
+     * Global search in multiple fields.
+     *
+     * @param query the search query
+     * @param pageable pagination parameters
+     * @return a page of contracts matching the query
+     */
+    @GetMapping("/search/global")
+    public ResponseEntity<Page<Contract>> globalSearch(@RequestParam String query, Pageable pageable) {
+        return ResponseEntity.ok(contractService.globalSearch(query, pageable));
+    }
+
+    /**
      * Get statistics about contracts.
      *
      * @return a map of statistics

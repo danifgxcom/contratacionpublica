@@ -163,4 +163,30 @@ public interface ContractRepository extends JpaRepository<Contract, UUID> {
            "GROUP BY c.countrySubentity " +
            "ORDER BY COUNT(c) DESC")
     List<Object[]> countByAutonomousCommunity();
+
+    /**
+     * Global search autocomplete suggestions from multiple fields.
+     *
+     * @param query the search query
+     * @return a list of suggestions with their types
+     */
+    @Query("SELECT DISTINCT c.title as text, 'title' as type FROM Contract c " +
+           "WHERE LOWER(c.title) LIKE LOWER(CONCAT('%', :query, '%')) " +
+           "UNION " +
+           "SELECT DISTINCT c.contractingPartyName as text, 'contracting_party' as type FROM Contract c " +
+           "WHERE LOWER(c.contractingPartyName) LIKE LOWER(CONCAT('%', :query, '%')) " +
+           "ORDER BY text LIMIT 30")
+    List<Map<String, String>> findGlobalAutocomplete(@Param("query") String query);
+
+    /**
+     * Global search in multiple fields (title, contracting party name).
+     *
+     * @param query the search query
+     * @param pageable pagination parameters
+     * @return a page of contracts matching the query
+     */
+    @Query("SELECT c FROM Contract c WHERE " +
+           "LOWER(c.title) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+           "LOWER(c.contractingPartyName) LIKE LOWER(CONCAT('%', :query, '%'))")
+    Page<Contract> findByGlobalSearch(@Param("query") String query, Pageable pageable);
 }

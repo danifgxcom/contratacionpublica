@@ -12,11 +12,31 @@
 
       <!-- Search Box -->
       <div class="mt-4">
-        <div class="input-group mb-3">
+        <div class="input-group mb-3 position-relative">
           <span class="input-group-text"><i class="bi bi-search"></i></span>
-          <input type="text" class="form-control form-control-lg" placeholder="Busca por título, entidad adjudicadora, tipo de contrato..." 
-                 aria-label="Buscar contratos" [formControl]="searchControl">
+          <input type="text" class="form-control form-control-lg" 
+                 placeholder="Busca por título, entidad adjudicadora... (mín. 3 letras)" 
+                 aria-label="Buscar contratos" 
+                 [formControl]="searchControl"
+                 (blur)="hideGlobalSuggestions()">
           <button class="btn btn-primary" type="button" (click)="searchContracts()">Buscar</button>
+          
+          <!-- Global Autocomplete suggestions dropdown -->
+          <div *ngIf="showGlobalSuggestions && globalSuggestions.length > 0" 
+               class="position-absolute w-100 bg-white border border-top-0 rounded-bottom shadow-lg" 
+               style="z-index: 1050; max-height: 300px; overflow-y: auto; top: 100%;">
+            <div *ngFor="let suggestion of globalSuggestions" 
+                 class="px-3 py-2 border-bottom suggestion-item d-flex justify-content-between align-items-center" 
+                 (click)="selectGlobalSuggestion(suggestion)"
+                 style="cursor: pointer;">
+              <span>{{ suggestion.text }}</span>
+              <small class="text-muted badge bg-light">{{ getSuggestionTypeLabel(suggestion.type) }}</small>
+            </div>
+            <div *ngIf="globalSuggestions.length >= 50" 
+                 class="px-3 py-2 text-muted small text-center border-top">
+              Mostrando los primeros 50 resultados. Escribe más caracteres para refinar la búsqueda.
+            </div>
+          </div>
         </div>
       </div>
 

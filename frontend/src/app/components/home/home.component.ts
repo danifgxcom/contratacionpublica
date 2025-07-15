@@ -3,6 +3,7 @@ import { FormControl } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ContractService } from '../../services/contract.service';
 import { ChartConfiguration, ChartData } from 'chart.js';
+import { debounceTime, switchMap } from 'rxjs/operators';
 
 @Component({
   selector: 'app-home',
@@ -16,6 +17,15 @@ export class HomeComponent implements OnInit {
   lastUpdateDate = new Date();
   searchControl = new FormControl('');
   showAnomalies = false;
+  
+  // Autocomplete state
+  globalSuggestions: { text: string; type: string }[] = [];
+  showGlobalSuggestions: boolean = false;
+
+  // Cached counts to avoid repeated calculations
+  cachedTypeCounts: { [key: string]: number } = {};
+  cachedStatusCounts: { [key: string]: number } = {};
+  cachedSourceCounts: { [key: string]: number } = {};
 
   // Chart data
   typeChartData: ChartData = {
@@ -47,7 +57,14 @@ export class HomeComponent implements OnInit {
     '5': 'Concesión de servicios',
     '6': 'Administrativo especial',
     '7': 'Privado',
-    '8': 'Patrimonial'
+    '8': 'Patrimonial',
+    '21': 'Obras - Arrendamiento',
+    '22': 'Obras - Arrendamiento con opción de compra',
+    '31': 'Suministros - Arrendamiento',
+    '32': 'Suministros - Arrendamiento con opción de compra',
+    '50': 'Gestión de servicios públicos',
+    '999': 'Otros',
+    'Unknown': 'Tipo desconocido'
   };
 
   private statusCodeMap: { [key: string]: string } = {
@@ -55,7 +72,10 @@ export class HomeComponent implements OnInit {
     'ADJ': 'Adjudicado',
     'RES': 'Resuelto',
     'CAN': 'Cancelado',
-    'DES': 'Desierto'
+    'DES': 'Desierto',
+    'ANUL': 'Anulado',
+    'EV': 'En evaluación',
+    'PRE': 'Anuncio previo'
   };
 
   private sourceCodeMap: { [key: string]: string } = {
@@ -71,6 +91,32 @@ export class HomeComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadStatistics();
+    this.setupGlobalAutocomplete();
+  }
+
+  setupGlobalAutocomplete(): void {
+    this.searchControl.valueChanges.pipe(
+      debounceTime(300),
+      switchMap(query => {
+        if (query && query.length >= 3) {
+          return this.contractService.getGlobalAutocomplete(query);
+        } else {
+          this.globalSuggestions = [];
+          this.showGlobalSuggestions = false;
+          return [];
+        }
+      })
+    ).subscribe({
+      next: (suggestions) => {
+        this.globalSuggestions = suggestions;
+        this.showGlobalSuggestions = suggestions.length > 0;
+      },
+      error: (err) => {
+        console.error('Error fetching global autocomplete suggestions', err);
+        this.globalSuggestions = [];
+        this.showGlobalSuggestions = false;
+      }
+    });
   }
 
   loadStatistics(): void {
@@ -97,6 +143,7 @@ export class HomeComponent implements OnInit {
 
         this.loading = false;
         this.prepareChartData();
+        this.precalculateCounts();
       },
       error: (err) => {
         console.error('Error loading statistics', err);
@@ -212,51 +259,57 @@ export class HomeComponent implements OnInit {
   }
 
   /**
+   * Precalculate counts to avoid repeated calculations
+   */
+  precalculateCounts(): void {
+    // Clear existing cached counts
+    this.cachedTypeCounts = {};
+    this.cachedStatusCounts = {};
+    this.cachedSourceCounts = {};
+
+    // Calculate type counts
+    if (this.statistics.countByTypeCode) {
+      Object.entries(this.statistics.countByTypeCode).forEach(([key, value]: [string, any]) => {
+        let count = 0;
+        if (value && typeof value === 'object' && 'count' in value) {
+          count = value.count;
+        } else if (typeof value === 'number') {
+          count = value;
+        }
+        this.cachedTypeCounts[key] = count;
+      });
+    }
+
+    // Calculate status counts
+    if (this.statistics.countByStatus) {
+      Object.entries(this.statistics.countByStatus).forEach(([key, value]: [string, any]) => {
+        this.cachedStatusCounts[key] = typeof value === 'number' ? value : 0;
+      });
+    }
+
+    // Calculate source counts
+    if (this.statistics.countBySource) {
+      Object.entries(this.statistics.countBySource).forEach(([key, value]: [string, any]) => {
+        this.cachedSourceCounts[key] = typeof value === 'number' ? value : 0;
+      });
+    }
+  }
+
+  /**
    * Get contract count by type
    */
   getContractCountByType(typeCode: string): number {
-    console.log(`Getting count for type ${typeCode}`);
-
-    if (!this.statistics.countByTypeCode) {
-      console.warn('No countByTypeCode data available');
-      return 0;
-    }
-
     // Try with the provided code first
-    if (this.statistics.countByTypeCode[typeCode]) {
-      const typeData = this.statistics.countByTypeCode[typeCode];
-      console.log(`Type ${typeCode} data:`, typeData);
-
-      // Check if typeData has count property
-      if (typeData && typeof typeData === 'object' && 'count' in typeData) {
-        console.log(`Returning count: ${typeData.count}`);
-        return typeData.count;
-      } else if (typeof typeData === 'number') {
-        console.log(`Returning number value: ${typeData}`);
-        return typeData;
-      }
+    if (this.cachedTypeCounts[typeCode] !== undefined) {
+      return this.cachedTypeCounts[typeCode];
     }
 
     // If not found, try with padded code (e.g., '1' -> '01')
     const paddedCode = typeCode.padStart(2, '0');
-    console.log(`Trying with padded code: ${paddedCode}`);
-
-    if (this.statistics.countByTypeCode[paddedCode]) {
-      const typeData = this.statistics.countByTypeCode[paddedCode];
-      console.log(`Type ${paddedCode} data:`, typeData);
-
-      // Check if typeData has count property
-      if (typeData && typeof typeData === 'object' && 'count' in typeData) {
-        console.log(`Returning count: ${typeData.count}`);
-        return typeData.count;
-      } else if (typeof typeData === 'number') {
-        console.log(`Returning number value: ${typeData}`);
-        return typeData;
-      }
+    if (this.cachedTypeCounts[paddedCode] !== undefined) {
+      return this.cachedTypeCounts[paddedCode];
     }
 
-    // If still not found, log warning and return 0
-    console.warn(`No data for type ${typeCode} or ${typeCode.padStart(2, '0')}`);
     return 0;
   }
 
@@ -264,20 +317,14 @@ export class HomeComponent implements OnInit {
    * Get contract count by status
    */
   getContractCountByStatus(statusCode: string): number {
-    if (!this.statistics.countByStatus || !this.statistics.countByStatus[statusCode]) {
-      return 0;
-    }
-    return this.statistics.countByStatus[statusCode];
+    return this.cachedStatusCounts[statusCode] || 0;
   }
 
   /**
    * Get contract count by source
    */
   getContractCountBySource(sourceCode: string): number {
-    if (!this.statistics.countBySource || !this.statistics.countBySource[sourceCode]) {
-      return 0;
-    }
-    return this.statistics.countBySource[sourceCode];
+    return this.cachedSourceCounts[sourceCode] || 0;
   }
 
   /**
@@ -347,6 +394,39 @@ export class HomeComponent implements OnInit {
       this.router.navigate(['/contracts'], { 
         queryParams: { search: searchTerm } 
       });
+    }
+  }
+
+  /**
+   * Select a global suggestion
+   */
+  selectGlobalSuggestion(suggestion: { text: string; type: string }): void {
+    this.searchControl.setValue(suggestion.text);
+    this.globalSuggestions = [];
+    this.showGlobalSuggestions = false;
+    this.searchContracts();
+  }
+
+  /**
+   * Hide global suggestions
+   */
+  hideGlobalSuggestions(): void {
+    setTimeout(() => {
+      this.showGlobalSuggestions = false;
+    }, 200);
+  }
+
+  /**
+   * Get suggestion type label
+   */
+  getSuggestionTypeLabel(type: string): string {
+    switch (type) {
+      case 'title':
+        return 'Título';
+      case 'contracting_party':
+        return 'Organismo';
+      default:
+        return type;
     }
   }
 

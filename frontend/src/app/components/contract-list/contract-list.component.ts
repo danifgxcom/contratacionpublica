@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { ContractService } from '../../services/contract.service';
 import { FormBuilder, FormGroup } from '@angular/forms';
+import { Router, ActivatedRoute } from '@angular/router';
 
 @Component({
   selector: 'app-contract-list',
@@ -24,16 +25,38 @@ export class ContractListComponent implements OnInit {
   contractingPartySuggestions: string[] = [];
   showSuggestions: boolean = false;
   
+  // Sorting state
+  sortColumns: { field: string; direction: 'asc' | 'desc' }[] = [];
+  
   // Maps for type, status, and source codes
   typeCodeMap: { [key: string]: string } = {
+    // Basic types
     '1': 'Obras',
-    '2': 'Servicios',
+    '2': 'Servicios', 
     '3': 'Suministros',
     '4': 'Concesión de obras',
     '5': 'Concesión de servicios',
     '6': 'Administrativo especial',
     '7': 'Privado',
-    '8': 'Patrimonial'
+    '8': 'Patrimonial',
+    // Two-digit format
+    '01': 'Obras',
+    '02': 'Servicios',
+    '03': 'Suministros', 
+    '04': 'Concesión de obras',
+    '05': 'Concesión de servicios',
+    '06': 'Administrativo especial',
+    '07': 'Privado',
+    '08': 'Patrimonial',
+    // Extended official types
+    '21': 'Obras - Arrendamiento',
+    '22': 'Obras - Arrendamiento con opción de compra',
+    '31': 'Suministros - Arrendamiento',
+    '32': 'Suministros - Arrendamiento con opción de compra',
+    '50': 'Gestión de servicios públicos',
+    '99': 'Otro o mixto',
+    '999': 'Otros',
+    'Unknown': 'Tipo desconocido'
   };
 
   statusCodeMap: { [key: string]: string } = {
@@ -41,7 +64,10 @@ export class ContractListComponent implements OnInit {
     'ADJ': 'Adjudicado',
     'RES': 'Resuelto',
     'CAN': 'Cancelado',
-    'DES': 'Desierto'
+    'DES': 'Desierto',
+    'PRE': 'Anuncio previo',
+    'EV': 'Pendiente de adjudicación',
+    'ANUL': 'Anulada'
   };
 
   sourceCodeMap: { [key: string]: string } = {
@@ -52,7 +78,9 @@ export class ContractListComponent implements OnInit {
 
   constructor(
     private contractService: ContractService,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private router: Router,
+    private route: ActivatedRoute
   ) {
     this.filterForm = this.fb.group({
       title: [''],
@@ -64,14 +92,22 @@ export class ContractListComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.loadContracts();
+    // Check for global search query parameter
+    this.route.queryParams.subscribe(params => {
+      if (params['search']) {
+        this.performGlobalSearch(params['search']);
+      } else {
+        this.loadContracts();
+      }
+    });
   }
 
   loadContracts(): void {
     this.loading = true;
     this.error = false;
+    const sortQuery = this.buildSortQuery();
 
-    this.contractService.getAllContracts(this.page, this.size).subscribe({
+    this.contractService.getAllContracts(this.page, this.size, sortQuery).subscribe({
       next: (data) => {
         this.contracts = data.content;
         this.totalElements = data.totalElements;
@@ -96,10 +132,11 @@ export class ContractListComponent implements OnInit {
     this.loading = true;
     this.error = false;
     const filters = this.activeFilters;
+    const sortQuery = this.buildSortQuery();
 
     // Check which filter to apply
     if (filters.title) {
-      this.contractService.searchContractsByTitle(filters.title, this.page, this.size).subscribe({
+      this.contractService.searchContractsByTitle(filters.title, this.page, this.size, sortQuery).subscribe({
         next: (data) => {
           this.handleSearchResponse(data);
         },
@@ -110,7 +147,7 @@ export class ContractListComponent implements OnInit {
         }
       });
     } else if (filters.contractingParty) {
-      this.contractService.searchContractsByContractingPartyName(filters.contractingParty, this.page, this.size).subscribe({
+      this.contractService.searchContractsByContractingPartyName(filters.contractingParty, this.page, this.size, sortQuery).subscribe({
         next: (data) => {
           this.handleSearchResponse(data);
         },
@@ -121,7 +158,7 @@ export class ContractListComponent implements OnInit {
         }
       });
     } else if (filters.source) {
-      this.contractService.searchContractsBySource(filters.source, this.page, this.size).subscribe({
+      this.contractService.searchContractsBySource(filters.source, this.page, this.size, sortQuery).subscribe({
         next: (data) => {
           this.handleSearchResponse(data);
         },
@@ -190,24 +227,71 @@ export class ContractListComponent implements OnInit {
     }
   }
 
+  performGlobalSearch(query: string): void {
+    this.loading = true;
+    this.error = false;
+    const sortQuery = this.buildSortQuery();
+
+    this.contractService.globalSearch(query, this.page, this.size, sortQuery).subscribe({
+      next: (data) => {
+        this.handleSearchResponse(data);
+      },
+      error: (err) => {
+        console.error('Error performing global search', err);
+        this.error = true;
+        this.loading = false;
+      }
+    });
+  }
+
+  private buildSortQuery(): string {
+    if (this.sortColumns.length === 0) {
+      return '';
+    }
+    
+    return this.sortColumns
+      .map(col => `${col.field},${col.direction}`)
+      .join('&sort=');
+  }
+
   getPageNumbers(): number[] {
     const maxVisible = 5;
     const pages: number[] = [];
+    const currentPage = this.page + 1; // Convert to 1-based
     
     if (this.totalPages <= maxVisible) {
+      // Show all pages if total is small
       for (let i = 1; i <= this.totalPages; i++) {
         pages.push(i);
       }
     } else {
-      let start = Math.max(1, this.page + 1 - Math.floor(maxVisible / 2));
-      let end = Math.min(this.totalPages, start + maxVisible - 1);
+      // Always show first page
+      pages.push(1);
       
-      if (end - start < maxVisible - 1) {
-        start = Math.max(1, end - maxVisible + 1);
+      // Calculate range around current page
+      let start = Math.max(2, currentPage - 1);
+      let end = Math.min(this.totalPages - 1, currentPage + 1);
+      
+      // Add separator if needed
+      if (start > 2) {
+        pages.push(-1); // -1 represents "..."
       }
       
+      // Add pages around current
       for (let i = start; i <= end; i++) {
-        pages.push(i);
+        if (i !== 1 && i !== this.totalPages) {
+          pages.push(i);
+        }
+      }
+      
+      // Add separator if needed
+      if (end < this.totalPages - 1) {
+        pages.push(-1); // -1 represents "..."
+      }
+      
+      // Always show last page
+      if (this.totalPages > 1) {
+        pages.push(this.totalPages);
       }
     }
     
@@ -246,6 +330,44 @@ export class ContractListComponent implements OnInit {
     setTimeout(() => {
       this.showSuggestions = false;
     }, 200);
+  }
+
+  onColumnClick(field: string): void {
+    const existingIndex = this.sortColumns.findIndex(col => col.field === field);
+    
+    if (existingIndex === -1) {
+      // First click: add ascending
+      this.sortColumns.push({ field, direction: 'asc' });
+    } else {
+      const currentDirection = this.sortColumns[existingIndex].direction;
+      if (currentDirection === 'asc') {
+        // Second click: change to descending
+        this.sortColumns[existingIndex].direction = 'desc';
+      } else {
+        // Third click: remove from sorting
+        this.sortColumns.splice(existingIndex, 1);
+      }
+    }
+    
+    // Reset to first page when sorting changes
+    this.page = 0;
+    this.loadCurrentData();
+  }
+
+  getSortIcon(field: string): string {
+    const sortColumn = this.sortColumns.find(col => col.field === field);
+    if (!sortColumn) return '';
+    
+    return sortColumn.direction === 'asc' ? '↑' : '↓';
+  }
+
+  getSortOrder(field: string): number {
+    const index = this.sortColumns.findIndex(col => col.field === field);
+    return index === -1 ? 0 : index + 1;
+  }
+
+  navigateToContract(contractId: string): void {
+    this.router.navigate(['/contracts', contractId]);
   }
 
   /**

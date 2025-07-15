@@ -26,3 +26,16 @@
 .badge {
   font-size: 0.9rem;
 }
+
+/* Global autocomplete styles */
+.suggestion-item {
+  transition: background-color 0.2s;
+}
+
+.suggestion-item:hover {
+  background-color: #f8f9fa;
+}
+
+.suggestion-item:last-child {
+  border-bottom: none !important;
+}
