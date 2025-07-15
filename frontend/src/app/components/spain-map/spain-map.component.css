@@ -1,0 +1,122 @@
+.spain-map-container {
+  padding: 20px;
+  position: relative;
+}
+
+.map-description {
+  color: #555;
+  margin-bottom: 15px;
+  font-size: 14px;
+  line-height: 1.5;
+  max-width: 800px;
+}
+
+.map-container {
+  position: relative;
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+#spain-map {
+  height: 650px;
+  width: 100%;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+}
+
+#canarias-map {
+  height: 200px;
+  width: 250px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  position: absolute;
+  bottom: 40px;
+  left: 40px;
+  background: white;
+  z-index: 500;
+}
+
+#canarias-map::before {
+  content: "Canarias";
+  position: absolute;
+  top: 5px;
+  left: 10px;
+  font-size: 12px;
+  font-weight: bold;
+  color: #333;
+  z-index: 501;
+  background: white;
+  padding: 2px 5px;
+  border-radius: 3px;
+}
+
+.map-legend {
+  background-color: rgba(255, 255, 255, 0.9);
+  padding: 12px;
+  border-radius: 8px;
+  border: 2px solid #666666;
+  max-width: 280px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  position: absolute;
+  bottom: 15px;
+  right: 15px;
+  z-index: 1000;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.map-legend h6 {
+  margin-bottom: 12px;
+  font-weight: bold;
+  color: #333333;
+  text-align: center;
+  border-bottom: 1px solid #ccc;
+  padding-bottom: 8px;
+  text-transform: uppercase;
+  font-size: 14px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.legend-color {
+  width: 24px;
+  height: 18px;
+  margin-right: 12px;
+  border: 1px solid #666666;
+  border-radius: 2px;
+}
+
+.legend-item span {
+  font-size: 13px;
+  color: #333333;
+  font-weight: 500;
+}
+
+/* Leaflet popup styles */
+.leaflet-popup-content {
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.leaflet-popup-content strong {
+  color: #007bff;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .spain-map-container {
+    padding: 10px;
+  }
+
+  #spain-map {
+    height: 400px;
+  }
+
+  .map-legend {
+    max-width: 100%;
+  }
+}

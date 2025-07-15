@@ -20,7 +20,7 @@
                  [formControl]="searchControl"
                  (blur)="hideGlobalSuggestions()">
           <button class="btn btn-primary" type="button" (click)="searchContracts()">Buscar</button>
-          
+
           <!-- Global Autocomplete suggestions dropdown -->
           <div *ngIf="showGlobalSuggestions && globalSuggestions.length > 0" 
                class="position-absolute w-100 bg-white border border-top-0 rounded-bottom shadow-lg" 
@@ -177,6 +177,20 @@
               </div>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Map Section -->
+  <div class="row mt-4">
+    <div class="col-md-12">
+      <div class="card">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0"><i class="bi bi-map"></i> Mapa Político de Contratos por Comunidad Autónoma</h5>
+        </div>
+        <div class="card-body">
+          <app-spain-map></app-spain-map>
         </div>
       </div>
     </div>

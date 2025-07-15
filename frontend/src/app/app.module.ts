@@ -9,6 +9,7 @@ import { HomeComponent } from './components/home/home.component';
 import { ContractListComponent } from './components/contract-list/contract-list.component';
 import { ContractDetailComponent } from './components/contract-detail/contract-detail.component';
 import { StatisticsComponent } from './components/statistics/statistics.component';
+import { SpainMapComponent } from './components/spain-map/spain-map.component';
 
 import { NgChartsModule } from 'ng2-charts';
 
@@ -34,7 +35,8 @@ const routes: Routes = [
     FormsModule,
     ReactiveFormsModule,
     RouterModule.forRoot(routes),
-    NgChartsModule
+    NgChartsModule,
+    SpainMapComponent
   ],
   providers: [],
   bootstrap: [AppComponent]

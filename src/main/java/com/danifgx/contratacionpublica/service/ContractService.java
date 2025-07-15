@@ -96,6 +96,18 @@ public class ContractService {
     }
 
     /**
+     * Find contracts by country subentity (autonomous community) with pagination.
+     *
+     * @param countrySubentity the autonomous community name
+     * @param pageable the pagination information
+     * @return a page of contracts
+     */
+    @Transactional(readOnly = true)
+    public Page<Contract> findContractsByCountrySubentity(String countrySubentity, Pageable pageable) {
+        return contractRepository.findByCountrySubentityContainingIgnoreCase(countrySubentity, pageable);
+    }
+
+    /**
      * Get statistics about contracts.
      *
      * @return a map of statistics

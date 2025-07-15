@@ -16,6 +16,9 @@ export class ContractListComponent implements OnInit {
   size = 10;
   totalElements = 0;
   totalPages = 0;
+  
+  // Page size options
+  pageSizeOptions = [10, 25, 50, 100];
   filterForm: FormGroup;
 
   // Active filters state
@@ -24,6 +27,9 @@ export class ContractListComponent implements OnInit {
   // Autocomplete state
   contractingPartySuggestions: string[] = [];
   showSuggestions: boolean = false;
+  
+  // Autonomous communities
+  autonomousCommunities: string[] = [];
   
   // Sorting state
   sortColumns: { field: string; direction: 'asc' | 'desc' }[] = [];
@@ -86,18 +92,34 @@ export class ContractListComponent implements OnInit {
       title: [''],
       contractingParty: [''],
       source: [''],
+      countrySubentity: [''],
       dateFrom: [''],
       dateTo: ['']
     });
   }
 
   ngOnInit(): void {
+    // Load autonomous communities
+    this.loadAutonomousCommunities();
+    
     // Check for global search query parameter
     this.route.queryParams.subscribe(params => {
       if (params['search']) {
         this.performGlobalSearch(params['search']);
       } else {
         this.loadContracts();
+      }
+    });
+  }
+
+  loadAutonomousCommunities(): void {
+    this.contractService.getRegions().subscribe({
+      next: (regions) => {
+        this.autonomousCommunities = Object.values(regions).filter(region => region && region.trim() !== '');
+      },
+      error: (err) => {
+        console.error('Error loading autonomous communities', err);
+        this.autonomousCommunities = [];
       }
     });
   }
@@ -168,6 +190,17 @@ export class ContractListComponent implements OnInit {
           this.loading = false;
         }
       });
+    } else if (filters.countrySubentity) {
+      this.contractService.searchContractsByCountrySubentity(filters.countrySubentity, this.page, this.size, sortQuery).subscribe({
+        next: (data) => {
+          this.handleSearchResponse(data);
+        },
+        error: (err) => {
+          console.error('Error searching contracts by country subentity', err);
+          this.error = true;
+          this.loading = false;
+        }
+      });
     } else {
       // If no filters, load all contracts
       this.loadContracts();
@@ -216,6 +249,13 @@ export class ContractListComponent implements OnInit {
 
   goToLastPage(): void {
     this.page = this.totalPages - 1;
+    this.loadCurrentData();
+  }
+  
+  onPageSizeChange(event: any): void {
+    const newSize = parseInt(event.target.value, 10);
+    this.size = newSize;
+    this.page = 0; // Reset to first page
     this.loadCurrentData();
   }
 
@@ -392,11 +432,56 @@ export class ContractListComponent implements OnInit {
   }
 
   /**
+   * Get the best available amount from a contract (same logic as backend)
+   */
+  getBestAmount(contract: any): number | null {
+    // First try the structured fields
+    const structuredAmount = contract.totalAmount || contract.taxExclusiveAmount || contract.estimatedAmount;
+    
+    // If structured amount is 0 or null, try to parse from summary
+    if (!structuredAmount || structuredAmount === 0) {
+      const parsedAmount = this.parseAmountFromSummary(contract.summary);
+      if (parsedAmount && parsedAmount > 0) {
+        return parsedAmount;
+      }
+    }
+    
+    return structuredAmount || null;
+  }
+
+  /**
+   * Parse amount from summary field when structured fields are 0
+   */
+  private parseAmountFromSummary(summary: string): number | null {
+    if (!summary) return null;
+    
+    // Try to find patterns like "Importe: 4824.00 EUR" or "Importe: 4,824.00 EUR"
+    const patterns = [
+      /Importe:\s*([0-9]+(?:[.,][0-9]+)?)\s*EUR/i,
+      /Importe:\s*([0-9]+(?:\.[0-9]{3})*(?:,[0-9]+)?)\s*EUR/i,
+      /([0-9]+(?:[.,][0-9]+)?)\s*EUR/i
+    ];
+    
+    for (const pattern of patterns) {
+      const match = summary.match(pattern);
+      if (match) {
+        const amountStr = match[1].replace(/\./g, '').replace(',', '.');
+        const amount = parseFloat(amountStr);
+        if (!isNaN(amount)) {
+          return amount;
+        }
+      }
+    }
+    
+    return null;
+  }
+
+  /**
    * Format currency
    */
-  formatCurrency(amount: number): string {
+  formatCurrency(amount: number | null): string {
     if (amount === null || amount === undefined) {
-      return 'N/A';
+      return 'Sin importe';
     }
     return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(amount);
   }

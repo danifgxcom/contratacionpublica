@@ -17,7 +17,7 @@ export class HomeComponent implements OnInit {
   lastUpdateDate = new Date();
   searchControl = new FormControl('');
   showAnomalies = false;
-  
+
   // Autocomplete state
   globalSuggestions: { text: string; type: string }[] = [];
   showGlobalSuggestions: boolean = false;

@@ -84,6 +84,31 @@ export class ContractService {
   }
 
   /**
+   * Get regions (alias for getDistinctRegions)
+   */
+  getRegions(): Observable<{[key: string]: string}> {
+    return this.getDistinctRegions();
+  }
+
+  /**
+   * Search contracts by country subentity (autonomous community)
+   */
+  searchContractsByCountrySubentity(countrySubentity: string, page: number = 0, size: number = 10, sort: string = ''): Observable<any> {
+    let url = `${this.apiUrl}/contracts/search/country-subentity?countrySubentity=${encodeURIComponent(countrySubentity)}&page=${page}&size=${size}`;
+    if (sort) {
+      url += `&sort=${sort}`;
+    }
+    return this.http.get(url);
+  }
+
+  /**
+   * Get statistics by autonomous community
+   */
+  getStatisticsByAutonomousCommunity(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/contracts/statistics/autonomous-communities`);
+  }
+
+  /**
    * Get autocomplete suggestions for contracting party names
    */
   getContractingPartyAutocomplete(query: string): Observable<string[]> {

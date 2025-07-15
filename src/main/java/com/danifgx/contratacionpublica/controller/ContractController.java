@@ -85,6 +85,18 @@ public class ContractController {
     }
 
     /**
+     * Find contracts by country subentity (autonomous community).
+     *
+     * @param countrySubentity the autonomous community name
+     * @param pageable the pagination information
+     * @return a page of contracts
+     */
+    @GetMapping("/search/country-subentity")
+    public ResponseEntity<Page<Contract>> findContractsByCountrySubentity(@RequestParam String countrySubentity, Pageable pageable) {
+        return ResponseEntity.ok(contractService.findContractsByCountrySubentity(countrySubentity, pageable));
+    }
+
+    /**
      * Get autocomplete suggestions for contracting party names.
      *
      * @param query the search query (minimum 3 characters)
