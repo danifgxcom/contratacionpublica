@@ -137,6 +137,16 @@
   background-color: rgba(0, 0, 0, 0.025);
 }
 
+/* Cursor pointer */
+.cursor-pointer {
+  cursor: pointer;
+}
+
+/* Link styling */
+a:hover {
+  text-decoration: underline !important;
+}
+
 /* Legend improvements */
 .legend-item {
   display: flex;

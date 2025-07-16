@@ -107,12 +107,19 @@
     <!-- KPI Cards Row 2 -->
     <div class="row mb-4">
       <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card border-left-secondary shadow h-100 py-2">
+        <div class="card border-left-secondary shadow h-100 py-2 cursor-pointer" (click)="showRecentContracts()">
           <div class="card-body">
             <div class="row no-gutters align-items-center">
               <div class="col mr-2">
                 <div class="text-xs font-weight-bold text-secondary text-uppercase mb-1">Últimos 30 días</div>
-                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ formatNumber(statistics.recentActivity?.contractsLast30Days || 0) }}</div>
+                <div class="h5 mb-0 font-weight-bold text-gray-800">
+                  <a href="javascript:void(0)" 
+                     (click)="showRecentContracts()"
+                     class="text-decoration-none text-dark"
+                     title="Ver contratos recientes">
+                    {{ formatNumber(statistics.recentActivity?.contractsLast30Days || 0) }}
+                  </a>
+                </div>
                 <div class="text-xs text-muted">{{ formatCurrency(statistics.recentActivity?.amountLast30Days || 0) }}</div>
               </div>
               <div class="col-auto">
@@ -124,12 +131,19 @@
       </div>
 
       <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card border-left-dark shadow h-100 py-2">
+        <div class="card border-left-dark shadow h-100 py-2 cursor-pointer" (click)="showRecentContracts()">
           <div class="card-body">
             <div class="row no-gutters align-items-center">
               <div class="col mr-2">
                 <div class="text-xs font-weight-bold text-dark text-uppercase mb-1">Últimos 7 días</div>
-                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ formatNumber(statistics.recentActivity?.contractsLast7Days || 0) }}</div>
+                <div class="h5 mb-0 font-weight-bold text-gray-800">
+                  <a href="javascript:void(0)" 
+                     (click)="showRecentContracts()"
+                     class="text-decoration-none text-dark"
+                     title="Ver contratos recientes">
+                    {{ formatNumber(statistics.recentActivity?.contractsLast7Days || 0) }}
+                  </a>
+                </div>
                 <div class="text-xs text-muted">{{ formatCurrency(statistics.recentActivity?.amountLast7Days || 0) }}</div>
               </div>
               <div class="col-auto">
@@ -146,7 +160,26 @@
             <div class="row no-gutters align-items-center">
               <div class="col mr-2">
                 <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Contrato Máximo</div>
-                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ formatCurrency(statistics.amountAnalysis?.maxAmount || 0) }}</div>
+                <div class="h5 mb-0 font-weight-bold text-gray-800">
+                  <a *ngIf="statistics.amountAnalysis?.maxAmountContract" 
+                     href="javascript:void(0)" 
+                     (click)="goToContract(statistics.amountAnalysis.maxAmountContract.id)"
+                     class="text-decoration-none text-dark"
+                     title="Ver detalles del contrato: {{ statistics.amountAnalysis.maxAmountContract.title }}">
+                    {{ formatCurrency(statistics.amountAnalysis?.maxAmount || 0) }}
+                  </a>
+                  <span *ngIf="!statistics.amountAnalysis?.maxAmountContract">
+                    {{ formatCurrency(statistics.amountAnalysis?.maxAmount || 0) }}
+                  </span>
+                </div>
+                <div *ngIf="statistics.amountAnalysis?.maxAmountContract" class="text-xs text-muted">
+                  <a href="javascript:void(0)" 
+                     (click)="searchByContractingParty(statistics.amountAnalysis.maxAmountContract.contractingPartyName)"
+                     class="text-decoration-none text-muted"
+                     title="Buscar contratos de {{ statistics.amountAnalysis.maxAmountContract.contractingPartyName }}">
+                    {{ statistics.amountAnalysis.maxAmountContract.contractingPartyName }}
+                  </a>
+                </div>
               </div>
               <div class="col-auto">
                 <i class="fas fa-arrow-up fa-2x text-gray-300"></i>
@@ -250,9 +283,23 @@
                       [class]="i < 3 ? 'table-warning' : ''">
                     <td>
                       <small class="text-muted">[{{ type.typeCode }}]</small><br>
-                      <strong>{{ type.description }}</strong>
+                      <strong>
+                        <a href="javascript:void(0)" 
+                           (click)="searchByType(type.typeCode)"
+                           class="text-decoration-none text-dark"
+                           title="Buscar contratos de tipo {{ type.description }}">
+                          {{ type.description }}
+                        </a>
+                      </strong>
                     </td>
-                    <td class="text-end">{{ formatNumber(type.contractCount) }}</td>
+                    <td class="text-end">
+                      <a href="javascript:void(0)" 
+                         (click)="searchByType(type.typeCode)"
+                         class="text-decoration-none text-dark"
+                         title="Ver contratos de tipo {{ type.description }}">
+                        {{ formatNumber(type.contractCount) }}
+                      </a>
+                    </td>
                     <td class="text-end">{{ formatCurrency(type.totalAmount) }}</td>
                     <td class="text-end">{{ formatCurrency(type.averageAmount) }}</td>
                   </tr>
@@ -272,11 +319,24 @@
           <div class="card-body">
             <div *ngFor="let source of statistics.sourceEfficiency" class="mb-3">
               <div class="d-flex justify-content-between align-items-center mb-1">
-                <span class="font-weight-bold">{{ getSourceLabel(source.source) }}</span>
+                <span class="font-weight-bold">
+                  <a href="javascript:void(0)" 
+                     (click)="searchBySource(source.source)"
+                     class="text-decoration-none text-dark"
+                     title="Buscar contratos de origen {{ getSourceLabel(source.source) }}">
+                    {{ getSourceLabel(source.source) }}
+                  </a>
+                </span>
                 <span class="text-muted">{{ source.amountCoverage }}% datos</span>
               </div>
               <div class="small text-muted mb-1">
-                {{ formatNumber(source.contractCount) }} contratos • {{ formatCurrency(source.averageAmount) }} promedio
+                <a href="javascript:void(0)" 
+                   (click)="searchBySource(source.source)"
+                   class="text-decoration-none text-muted"
+                   title="Ver contratos de origen {{ getSourceLabel(source.source) }}">
+                  {{ formatNumber(source.contractCount) }} contratos
+                </a>
+                 • {{ formatCurrency(source.averageAmount) }} promedio
               </div>
               <div class="progress" style="height: 8px;">
                 <div class="progress-bar" 
@@ -324,9 +384,23 @@
                       </span>
                     </td>
                     <td>
-                      <strong>{{ region.region }}</strong>
+                      <strong>
+                        <a href="javascript:void(0)" 
+                           (click)="searchByRegion(region.region)"
+                           class="text-decoration-none text-dark"
+                           title="Buscar contratos en {{ region.region }}">
+                          {{ region.region }}
+                        </a>
+                      </strong>
                     </td>
-                    <td class="text-end">{{ formatNumber(region.contractCount) }}</td>
+                    <td class="text-end">
+                      <a href="javascript:void(0)" 
+                         (click)="searchByRegion(region.region)"
+                         class="text-decoration-none text-dark"
+                         title="Ver contratos de {{ region.region }}">
+                        {{ formatNumber(region.contractCount) }}
+                      </a>
+                    </td>
                     <td class="text-end">{{ formatCurrency(region.totalAmount) }}</td>
                     <td class="text-end">{{ formatCurrency(region.averageAmount) }}</td>
                     <td class="text-center">
@@ -423,9 +497,23 @@
                       </span>
                     </td>
                     <td>
-                      <strong>{{ org.name }}</strong>
+                      <strong>
+                        <a href="javascript:void(0)" 
+                           (click)="searchByContractingParty(org.name)"
+                           class="text-decoration-none text-dark"
+                           title="Buscar contratos de {{ org.name }}">
+                          {{ org.name }}
+                        </a>
+                      </strong>
                     </td>
-                    <td class="text-end">{{ formatNumber(org.contractCount) }}</td>
+                    <td class="text-end">
+                      <a href="javascript:void(0)" 
+                         (click)="searchByContractingParty(org.name)"
+                         class="text-decoration-none text-dark"
+                         title="Ver contratos de {{ org.name }}">
+                        {{ formatNumber(org.contractCount) }}
+                      </a>
+                    </td>
                     <td class="text-end">{{ formatCurrency(org.totalAmount) }}</td>
                     <td class="text-end">{{ formatNumber(org.contractsWithAmount) }}</td>
                     <td class="text-end">{{ formatNumber(org.contractsWithoutAmount) }}</td>

@@ -164,6 +164,18 @@ public class ContractStatisticsService {
             analysis.put("amountCoverage", stats[6]); // percentage of contracts with amount
         }
         
+        // Add max amount contract details for linking
+        List<Object[]> maxContract = contractRepository.getMaxAmountContract();
+        if (!maxContract.isEmpty()) {
+            Object[] contractData = maxContract.get(0);
+            Map<String, Object> maxContractInfo = new HashMap<>();
+            maxContractInfo.put("id", contractData[0]);
+            maxContractInfo.put("title", contractData[1]);
+            maxContractInfo.put("contractingPartyName", contractData[2]);
+            maxContractInfo.put("amount", contractData[3]);
+            analysis.put("maxAmountContract", maxContractInfo);
+        }
+        
         return analysis;
     }
 

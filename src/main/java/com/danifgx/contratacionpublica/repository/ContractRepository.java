@@ -389,4 +389,15 @@ public interface ContractRepository extends JpaRepository<Contract, UUID> {
            "FROM contracts", nativeQuery = true)
     List<Object[]> getRecentActivityStats();
 
+    /**
+     * Get contract with maximum amount for linking purposes.
+     */
+    @Query("SELECT c.id, c.title, c.contractingPartyName, " +
+           "COALESCE(NULLIF(c.totalAmount, 0), NULLIF(c.taxExclusiveAmount, 0), c.estimatedAmount) as effectiveAmount " +
+           "FROM Contract c " +
+           "WHERE COALESCE(NULLIF(c.totalAmount, 0), NULLIF(c.taxExclusiveAmount, 0), c.estimatedAmount) IS NOT NULL " +
+           "ORDER BY effectiveAmount DESC " +
+           "LIMIT 1")
+    List<Object[]> getMaxAmountContract();
+
 }

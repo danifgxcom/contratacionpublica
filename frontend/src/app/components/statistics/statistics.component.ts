@@ -3,6 +3,7 @@ import { ContractService } from '../../services/contract.service';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { Chart, ChartConfiguration, ChartData, ChartType } from 'chart.js';
 import { BaseChartDirective } from 'ng2-charts';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-statistics',
@@ -200,7 +201,8 @@ export class StatisticsComponent implements OnInit {
 
   constructor(
     private contractService: ContractService,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private router: Router
   ) {
     this.filterForm = this.fb.group({
       year: [''],
@@ -398,5 +400,87 @@ export class StatisticsComponent implements OnInit {
     if (percentage >= 80) return 'bg-success';
     if (percentage >= 60) return 'bg-warning';
     return 'bg-danger';
+  }
+
+  /**
+   * Navigate to contract details page
+   */
+  goToContract(contractId: string): void {
+    this.router.navigate(['/contracts', contractId]);
+  }
+
+  /**
+   * Navigate to contracts page with contracting party filter
+   */
+  searchByContractingParty(contractingPartyName: string): void {
+    this.router.navigate(['/contracts'], {
+      queryParams: { 
+        contractingPartyName: contractingPartyName,
+        page: 0
+      }
+    });
+  }
+
+  /**
+   * Navigate to contracts page with region filter
+   */
+  searchByRegion(region: string): void {
+    this.router.navigate(['/contracts'], {
+      queryParams: { 
+        countrySubentity: region,
+        page: 0
+      }
+    });
+  }
+
+  /**
+   * Navigate to contracts page with source filter
+   */
+  searchBySource(source: string): void {
+    this.router.navigate(['/contracts'], {
+      queryParams: { 
+        source: source,
+        page: 0
+      }
+    });
+  }
+
+  /**
+   * Navigate to contracts page with amount sorting (descending to show highest first)
+   */
+  showHighestContracts(): void {
+    this.router.navigate(['/contracts'], {
+      queryParams: { 
+        sort: 'amount,desc',
+        page: 0
+      }
+    });
+  }
+
+  /**
+   * Navigate to recent contracts (last 30 days)
+   */
+  showRecentContracts(): void {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    this.router.navigate(['/contracts'], {
+      queryParams: { 
+        sort: 'updatedAt,desc',
+        page: 0
+      }
+    });
+  }
+
+  /**
+   * Navigate to contracts page with type filter
+   */
+  searchByType(typeCode: string): void {
+    this.router.navigate(['/contracts'], {
+      queryParams: { 
+        typeCode: typeCode,
+        page: 0
+      }
+    });
   }
 }
