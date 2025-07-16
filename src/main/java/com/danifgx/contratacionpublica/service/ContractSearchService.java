@@ -37,6 +37,26 @@ public class ContractSearchService {
     public Page<Contract> searchByTitle(String title, Pageable pageable) {
         validateSearchTerm(title, "title");
         log.debug("Searching contracts by title: {}", title);
+        
+        // Check if sorting by amount fields and use custom queries
+        if (pageable.getSort().isSorted()) {
+            for (Sort.Order order : pageable.getSort()) {
+                if (isAmountField(order.getProperty())) {
+                    log.info("🎯 SEARCH SERVICE - Amount sorting detected for field: {} with direction: {}", order.getProperty(), order.getDirection());
+                    // Create pageable without sort for the custom query (it has its own ORDER BY)
+                    Pageable unsortedPageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
+                    
+                    if (order.getDirection() == Sort.Direction.ASC) {
+                        log.info("🔼 Executing ASCENDING custom search query for title");
+                        return contractRepository.findByTitleContainingIgnoreCaseOrderByEffectiveAmountAsc(title, unsortedPageable);
+                    } else {
+                        log.info("🔽 Executing DESCENDING custom search query for title");
+                        return contractRepository.findByTitleContainingIgnoreCaseOrderByEffectiveAmountDesc(title, unsortedPageable);
+                    }
+                }
+            }
+        }
+        
         Pageable adjustedPageable = adjustPageableForAmountSorting(pageable);
         return contractRepository.findByTitleContainingIgnoreCase(title, adjustedPageable);
     }
@@ -51,6 +71,26 @@ public class ContractSearchService {
     public Page<Contract> searchByContractingPartyName(String contractingPartyName, Pageable pageable) {
         validateSearchTerm(contractingPartyName, "contracting party name");
         log.debug("Searching contracts by contracting party: {}", contractingPartyName);
+        
+        // Check if sorting by amount fields and use custom queries
+        if (pageable.getSort().isSorted()) {
+            for (Sort.Order order : pageable.getSort()) {
+                if (isAmountField(order.getProperty())) {
+                    log.info("🎯 SEARCH SERVICE - Amount sorting detected for field: {} with direction: {}", order.getProperty(), order.getDirection());
+                    // Create pageable without sort for the custom query (it has its own ORDER BY)
+                    Pageable unsortedPageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
+                    
+                    if (order.getDirection() == Sort.Direction.ASC) {
+                        log.info("🔼 Executing ASCENDING custom search query for contracting party");
+                        return contractRepository.findByContractingPartyNameContainingIgnoreCaseOrderByEffectiveAmountAsc(contractingPartyName, unsortedPageable);
+                    } else {
+                        log.info("🔽 Executing DESCENDING custom search query for contracting party");
+                        return contractRepository.findByContractingPartyNameContainingIgnoreCaseOrderByEffectiveAmountDesc(contractingPartyName, unsortedPageable);
+                    }
+                }
+            }
+        }
+        
         Pageable adjustedPageable = adjustPageableForAmountSorting(pageable);
         return contractRepository.findByContractingPartyNameContainingIgnoreCase(contractingPartyName, adjustedPageable);
     }
@@ -65,6 +105,26 @@ public class ContractSearchService {
     public Page<Contract> searchBySource(String source, Pageable pageable) {
         validateSearchTerm(source, "source");
         log.debug("Searching contracts by source: {}", source);
+        
+        // Check if sorting by amount fields and use custom queries
+        if (pageable.getSort().isSorted()) {
+            for (Sort.Order order : pageable.getSort()) {
+                if (isAmountField(order.getProperty())) {
+                    log.info("🎯 SEARCH SERVICE - Amount sorting detected for field: {} with direction: {}", order.getProperty(), order.getDirection());
+                    // Create pageable without sort for the custom query (it has its own ORDER BY)
+                    Pageable unsortedPageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
+                    
+                    if (order.getDirection() == Sort.Direction.ASC) {
+                        log.info("🔼 Executing ASCENDING custom search query for source");
+                        return contractRepository.findBySourceOrderByEffectiveAmountAsc(source, unsortedPageable);
+                    } else {
+                        log.info("🔽 Executing DESCENDING custom search query for source");
+                        return contractRepository.findBySourceOrderByEffectiveAmountDesc(source, unsortedPageable);
+                    }
+                }
+            }
+        }
+        
         Pageable adjustedPageable = adjustPageableForAmountSorting(pageable);
         return contractRepository.findBySource(source, adjustedPageable);
     }
@@ -79,6 +139,26 @@ public class ContractSearchService {
     public Page<Contract> searchByCountrySubentity(String countrySubentity, Pageable pageable) {
         validateSearchTerm(countrySubentity, "country subentity");
         log.debug("Searching contracts by country subentity: {}", countrySubentity);
+        
+        // Check if sorting by amount fields and use custom queries
+        if (pageable.getSort().isSorted()) {
+            for (Sort.Order order : pageable.getSort()) {
+                if (isAmountField(order.getProperty())) {
+                    log.info("🎯 SEARCH SERVICE - Amount sorting detected for field: {} with direction: {}", order.getProperty(), order.getDirection());
+                    // Create pageable without sort for the custom query (it has its own ORDER BY)
+                    Pageable unsortedPageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
+                    
+                    if (order.getDirection() == Sort.Direction.ASC) {
+                        log.info("🔼 Executing ASCENDING custom search query for country subentity");
+                        return contractRepository.findByCountrySubentityContainingIgnoreCaseOrderByEffectiveAmountAsc(countrySubentity, unsortedPageable);
+                    } else {
+                        log.info("🔽 Executing DESCENDING custom search query for country subentity");
+                        return contractRepository.findByCountrySubentityContainingIgnoreCaseOrderByEffectiveAmountDesc(countrySubentity, unsortedPageable);
+                    }
+                }
+            }
+        }
+        
         Pageable adjustedPageable = adjustPageableForAmountSorting(pageable);
         return contractRepository.findByCountrySubentityContainingIgnoreCase(countrySubentity, adjustedPageable);
     }
@@ -93,6 +173,26 @@ public class ContractSearchService {
     public Page<Contract> globalSearch(String query, Pageable pageable) {
         validateSearchTerm(query, "global search query");
         log.debug("Performing global search: {}", query);
+        
+        // Check if sorting by amount fields and use custom queries
+        if (pageable.getSort().isSorted()) {
+            for (Sort.Order order : pageable.getSort()) {
+                if (isAmountField(order.getProperty())) {
+                    log.info("🎯 SEARCH SERVICE - Amount sorting detected for field: {} with direction: {}", order.getProperty(), order.getDirection());
+                    // Create pageable without sort for the custom query (it has its own ORDER BY)
+                    Pageable unsortedPageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
+                    
+                    if (order.getDirection() == Sort.Direction.ASC) {
+                        log.info("🔼 Executing ASCENDING custom search query for global search");
+                        return contractRepository.findByGlobalSearchOrderByEffectiveAmountAsc(query, unsortedPageable);
+                    } else {
+                        log.info("🔽 Executing DESCENDING custom search query for global search");
+                        return contractRepository.findByGlobalSearchOrderByEffectiveAmountDesc(query, unsortedPageable);
+                    }
+                }
+            }
+        }
+        
         Pageable adjustedPageable = adjustPageableForAmountSorting(pageable);
         return contractRepository.findByGlobalSearch(query, adjustedPageable);
     }

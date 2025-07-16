@@ -227,14 +227,66 @@ public interface ContractRepository extends JpaRepository<Contract, UUID> {
     /**
      * Find all contracts ordered by effective amount (COALESCE of totalAmount, taxExclusiveAmount, estimatedAmount).
      * This handles the case where we need to sort by the "real" amount displayed to users.
+     * Uses NULLIF to treat zero values as NULL, so COALESCE continues to the next field.
      *
-     * @param pageable pagination parameters
+     * @param pageable pagination parameters (should not contain sort as query has its own ORDER BY)
      * @return a page of contracts ordered by effective amount
      */
-    @Query("SELECT c FROM Contract c ORDER BY COALESCE(c.totalAmount, c.taxExclusiveAmount, c.estimatedAmount) ASC NULLS LAST")
+    @Query(value = "SELECT c FROM Contract c ORDER BY COALESCE(NULLIF(c.totalAmount, 0), NULLIF(c.taxExclusiveAmount, 0), c.estimatedAmount) ASC NULLS LAST")
     Page<Contract> findAllOrderByEffectiveAmountAsc(Pageable pageable);
 
-    @Query("SELECT c FROM Contract c ORDER BY COALESCE(c.totalAmount, c.taxExclusiveAmount, c.estimatedAmount) DESC NULLS LAST")
+    @Query(value = "SELECT c FROM Contract c ORDER BY COALESCE(NULLIF(c.totalAmount, 0), NULLIF(c.taxExclusiveAmount, 0), c.estimatedAmount) DESC NULLS LAST")
     Page<Contract> findAllOrderByEffectiveAmountDesc(Pageable pageable);
+
+    /**
+     * Find contracts by title with amount sorting.
+     */
+    @Query("SELECT c FROM Contract c WHERE LOWER(c.title) LIKE LOWER(CONCAT('%', :title, '%')) ORDER BY COALESCE(NULLIF(c.totalAmount, 0), NULLIF(c.taxExclusiveAmount, 0), c.estimatedAmount) ASC NULLS LAST")
+    Page<Contract> findByTitleContainingIgnoreCaseOrderByEffectiveAmountAsc(@Param("title") String title, Pageable pageable);
+
+    @Query("SELECT c FROM Contract c WHERE LOWER(c.title) LIKE LOWER(CONCAT('%', :title, '%')) ORDER BY COALESCE(NULLIF(c.totalAmount, 0), NULLIF(c.taxExclusiveAmount, 0), c.estimatedAmount) DESC NULLS LAST")
+    Page<Contract> findByTitleContainingIgnoreCaseOrderByEffectiveAmountDesc(@Param("title") String title, Pageable pageable);
+
+    /**
+     * Find contracts by contracting party name with amount sorting.
+     */
+    @Query("SELECT c FROM Contract c WHERE LOWER(c.contractingPartyName) LIKE LOWER(CONCAT('%', :contractingPartyName, '%')) ORDER BY COALESCE(NULLIF(c.totalAmount, 0), NULLIF(c.taxExclusiveAmount, 0), c.estimatedAmount) ASC NULLS LAST")
+    Page<Contract> findByContractingPartyNameContainingIgnoreCaseOrderByEffectiveAmountAsc(@Param("contractingPartyName") String contractingPartyName, Pageable pageable);
+
+    @Query("SELECT c FROM Contract c WHERE LOWER(c.contractingPartyName) LIKE LOWER(CONCAT('%', :contractingPartyName, '%')) ORDER BY COALESCE(NULLIF(c.totalAmount, 0), NULLIF(c.taxExclusiveAmount, 0), c.estimatedAmount) DESC NULLS LAST")
+    Page<Contract> findByContractingPartyNameContainingIgnoreCaseOrderByEffectiveAmountDesc(@Param("contractingPartyName") String contractingPartyName, Pageable pageable);
+
+    /**
+     * Find contracts by source with amount sorting.
+     */
+    @Query("SELECT c FROM Contract c WHERE c.source = :source ORDER BY COALESCE(NULLIF(c.totalAmount, 0), NULLIF(c.taxExclusiveAmount, 0), c.estimatedAmount) ASC NULLS LAST")
+    Page<Contract> findBySourceOrderByEffectiveAmountAsc(@Param("source") String source, Pageable pageable);
+
+    @Query("SELECT c FROM Contract c WHERE c.source = :source ORDER BY COALESCE(NULLIF(c.totalAmount, 0), NULLIF(c.taxExclusiveAmount, 0), c.estimatedAmount) DESC NULLS LAST")
+    Page<Contract> findBySourceOrderByEffectiveAmountDesc(@Param("source") String source, Pageable pageable);
+
+    /**
+     * Find contracts by country subentity with amount sorting.
+     */
+    @Query("SELECT c FROM Contract c WHERE LOWER(c.countrySubentity) LIKE LOWER(CONCAT('%', :countrySubentity, '%')) ORDER BY COALESCE(NULLIF(c.totalAmount, 0), NULLIF(c.taxExclusiveAmount, 0), c.estimatedAmount) ASC NULLS LAST")
+    Page<Contract> findByCountrySubentityContainingIgnoreCaseOrderByEffectiveAmountAsc(@Param("countrySubentity") String countrySubentity, Pageable pageable);
+
+    @Query("SELECT c FROM Contract c WHERE LOWER(c.countrySubentity) LIKE LOWER(CONCAT('%', :countrySubentity, '%')) ORDER BY COALESCE(NULLIF(c.totalAmount, 0), NULLIF(c.taxExclusiveAmount, 0), c.estimatedAmount) DESC NULLS LAST")
+    Page<Contract> findByCountrySubentityContainingIgnoreCaseOrderByEffectiveAmountDesc(@Param("countrySubentity") String countrySubentity, Pageable pageable);
+
+    /**
+     * Global search with amount sorting.
+     */
+    @Query("SELECT c FROM Contract c WHERE " +
+           "LOWER(c.title) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+           "LOWER(c.contractingPartyName) LIKE LOWER(CONCAT('%', :query, '%')) " +
+           "ORDER BY COALESCE(NULLIF(c.totalAmount, 0), NULLIF(c.taxExclusiveAmount, 0), c.estimatedAmount) ASC NULLS LAST")
+    Page<Contract> findByGlobalSearchOrderByEffectiveAmountAsc(@Param("query") String query, Pageable pageable);
+
+    @Query("SELECT c FROM Contract c WHERE " +
+           "LOWER(c.title) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+           "LOWER(c.contractingPartyName) LIKE LOWER(CONCAT('%', :query, '%')) " +
+           "ORDER BY COALESCE(NULLIF(c.totalAmount, 0), NULLIF(c.taxExclusiveAmount, 0), c.estimatedAmount) DESC NULLS LAST")
+    Page<Contract> findByGlobalSearchOrderByEffectiveAmountDesc(@Param("query") String query, Pageable pageable);
 
 }
