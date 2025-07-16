@@ -26,7 +26,23 @@ export class StatisticsComponent implements OnInit {
     '5': 'Concesión de servicios',
     '6': 'Administrativo especial',
     '7': 'Privado',
-    '8': 'Patrimonial'
+    '8': 'Patrimonial',
+    '01': 'Obras',
+    '02': 'Servicios',
+    '03': 'Suministros', 
+    '04': 'Concesión de obras',
+    '05': 'Concesión de servicios',
+    '06': 'Administrativo especial',
+    '07': 'Privado',
+    '08': 'Patrimonial',
+    '21': 'Obras - Arrendamiento',
+    '22': 'Obras - Arrendamiento con opción de compra',
+    '31': 'Suministros - Arrendamiento',
+    '32': 'Suministros - Arrendamiento con opción de compra',
+    '50': 'Gestión de servicios públicos',
+    '99': 'Otro o mixto',
+    '999': 'Otros',
+    'Unknown': 'Tipo desconocido'
   };
 
   statusCodeMap: { [key: string]: string } = {
@@ -34,7 +50,10 @@ export class StatisticsComponent implements OnInit {
     'ADJ': 'Adjudicado',
     'RES': 'Resuelto',
     'CAN': 'Cancelado',
-    'DES': 'Desierto'
+    'DES': 'Desierto',
+    'PRE': 'Anuncio previo',
+    'EV': 'Pendiente de adjudicación',
+    'ANUL': 'Anulada'
   };
 
   sourceCodeMap: { [key: string]: string } = {
@@ -80,12 +99,99 @@ export class StatisticsComponent implements OnInit {
     ]
   };
 
+  public monthlyTrendsChartData: ChartData = {
+    labels: [],
+    datasets: [
+      {
+        label: 'Número de Contratos',
+        data: [],
+        borderColor: '#4e73df',
+        backgroundColor: 'rgba(78, 115, 223, 0.1)',
+        yAxisID: 'y'
+      },
+      {
+        label: 'Valor Total (M€)',
+        data: [],
+        borderColor: '#1cc88a',
+        backgroundColor: 'rgba(28, 200, 138, 0.1)',
+        yAxisID: 'y1'
+      }
+    ]
+  };
+
+  public valueDistributionChartData: ChartData = {
+    labels: ['Micro (<40k)', 'Pequeño (40k-144k)', 'Mediano (144k-750k)', 'Grande (>750k)'],
+    datasets: [
+      {
+        data: [],
+        backgroundColor: [
+          '#4e73df', '#1cc88a', '#36b9cc', '#f6c23e'
+        ]
+      }
+    ]
+  };
+
   public pieChartOptions: ChartConfiguration['options'] = {
     responsive: true,
     plugins: {
       legend: {
         display: true,
         position: 'top',
+      }
+    }
+  };
+
+  public compactPieOptions: ChartConfiguration['options'] = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: false
+      }
+    }
+  };
+
+  public doughnutChartOptions: ChartConfiguration['options'] = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: true,
+        position: 'bottom',
+      }
+    }
+  };
+
+  public lineChartOptions: ChartConfiguration['options'] = {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+      y: {
+        type: 'linear',
+        display: true,
+        position: 'left',
+        title: {
+          display: true,
+          text: 'Número de Contratos'
+        }
+      },
+      y1: {
+        type: 'linear',
+        display: true,
+        position: 'right',
+        title: {
+          display: true,
+          text: 'Valor Total (M€)'
+        },
+        grid: {
+          drawOnChartArea: false,
+        },
+      },
+    },
+    plugins: {
+      legend: {
+        display: true,
+        position: 'top'
       }
     }
   };
@@ -113,7 +219,6 @@ export class StatisticsComponent implements OnInit {
     this.contractService.getDistinctYears().subscribe({
       next: (years) => {
         this.years = years;
-        console.log('Loaded years:', years);
       },
       error: (err) => {
         console.error('Error loading years', err);
@@ -124,7 +229,6 @@ export class StatisticsComponent implements OnInit {
     this.contractService.getDistinctRegions().subscribe({
       next: (regions) => {
         this.regions = regions;
-        console.log('Loaded regions:', regions);
       },
       error: (err) => {
         console.error('Error loading regions', err);
@@ -151,10 +255,16 @@ export class StatisticsComponent implements OnInit {
   }
 
   updateCharts(): void {
+    this.updateOriginalCharts();
+    this.updateMonthlyTrendsChart();
+    this.updateValueDistributionChart();
+  }
+
+  updateOriginalCharts(): void {
     // Update type chart
     if (this.statistics.countByTypeCode) {
       const typeLabels = Object.keys(this.statistics.countByTypeCode).map(key => this.getTypeLabel(key));
-      const typeData = Object.values(this.statistics.countByTypeCode).map(value => Number(value));
+      const typeData = Object.values(this.statistics.countByTypeCode).map((value: any) => Number(value.count || value));
 
       this.typeChartData.labels = typeLabels;
       this.typeChartData.datasets[0].data = typeData;
@@ -179,9 +289,37 @@ export class StatisticsComponent implements OnInit {
     }
   }
 
+  updateMonthlyTrendsChart(): void {
+    if (this.statistics.monthlyTrends && this.statistics.monthlyTrends.length > 0) {
+      const sortedTrends = [...this.statistics.monthlyTrends]
+        .sort((a, b) => a.year - b.year || a.month - b.month);
+
+      const labels = sortedTrends.map(trend => `${trend.month}/${trend.year}`);
+      const contractCounts = sortedTrends.map(trend => trend.contractCount);
+      const amounts = sortedTrends.map(trend => (trend.totalAmount || 0) / 1000000); // Convert to millions
+
+      this.monthlyTrendsChartData.labels = labels;
+      this.monthlyTrendsChartData.datasets[0].data = contractCounts;
+      this.monthlyTrendsChartData.datasets[1].data = amounts;
+    }
+  }
+
+  updateValueDistributionChart(): void {
+    if (this.statistics.contractValueDistribution) {
+      const distribution = this.statistics.contractValueDistribution;
+      const data = [
+        distribution.microContracts || 0,
+        distribution.smallContracts || 0,
+        distribution.mediumContracts || 0,
+        distribution.largeContracts || 0
+      ];
+
+      this.valueDistributionChartData.datasets[0].data = data;
+    }
+  }
+
   applyFilters(): void {
-    // In a real application, this would filter the statistics based on the form values
-    // For now, we'll just reload the statistics
+    // For now, just reload statistics
     this.loadStatistics();
   }
 
@@ -222,5 +360,43 @@ export class StatisticsComponent implements OnInit {
       return 'No disponible';
     }
     return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(amount);
+  }
+
+  /**
+   * Format numbers with thousand separators
+   */
+  formatNumber(num: number): string {
+    if (num === null || num === undefined) {
+      return '0';
+    }
+    return new Intl.NumberFormat('es-ES').format(num);
+  }
+
+  /**
+   * Get region participation percentage
+   */
+  getRegionParticipation(regionAmount: number): number {
+    if (!this.statistics.amountAnalysis?.totalAmount || !regionAmount) {
+      return 0;
+    }
+    return Math.round((regionAmount / this.statistics.amountAnalysis.totalAmount) * 100);
+  }
+
+  /**
+   * Get data quality percentage for organizations
+   */
+  getDataQualityPercentage(withAmount: number, total: number): number {
+    if (!total) return 0;
+    return Math.round((withAmount / total) * 100);
+  }
+
+  /**
+   * Get CSS class for data quality progress bar
+   */
+  getDataQualityClass(withAmount: number, total: number): string {
+    const percentage = this.getDataQualityPercentage(withAmount, total);
+    if (percentage >= 80) return 'bg-success';
+    if (percentage >= 60) return 'bg-warning';
+    return 'bg-danger';
   }
 }

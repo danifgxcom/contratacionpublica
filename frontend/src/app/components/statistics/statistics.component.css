@@ -1,11 +1,92 @@
-/* Styles for the statistics component */
+/* Professional Dashboard Styling */
 
-/* Style for the card headers */
-.card-header {
-  background-color: #f8f9fa;
+/* Border colors for KPI cards */
+.border-left-primary {
+  border-left: 0.25rem solid #4e73df !important;
 }
 
-/* Style for the chart containers */
+.border-left-success {
+  border-left: 0.25rem solid #1cc88a !important;
+}
+
+.border-left-info {
+  border-left: 0.25rem solid #36b9cc !important;
+}
+
+.border-left-warning {
+  border-left: 0.25rem solid #f6c23e !important;
+}
+
+.border-left-danger {
+  border-left: 0.25rem solid #e74a3b !important;
+}
+
+.border-left-secondary {
+  border-left: 0.25rem solid #858796 !important;
+}
+
+.border-left-dark {
+  border-left: 0.25rem solid #5a5c69 !important;
+}
+
+.border-left-light {
+  border-left: 0.25rem solid #f8f9fc !important;
+}
+
+/* Text sizing and weights */
+.text-xs {
+  font-size: 0.7rem;
+}
+
+.font-weight-bold {
+  font-weight: 700 !important;
+}
+
+.text-gray-800 {
+  color: #5a5c69 !important;
+}
+
+.text-gray-300 {
+  color: #adb5bd !important;
+}
+
+/* Progress bars */
+.progress-sm {
+  height: 0.5rem;
+}
+
+/* Card shadows */
+.shadow {
+  box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15) !important;
+}
+
+/* Custom badge colors */
+.bg-gold {
+  background-color: #ffd700 !important;
+  color: #000 !important;
+}
+
+.bg-silver {
+  background-color: #c0c0c0 !important;
+  color: #000 !important;
+}
+
+.bg-bronze {
+  background-color: #cd7f32 !important;
+  color: #fff !important;
+}
+
+/* Chart containers */
+.chart-area {
+  position: relative;
+  height: 400px;
+}
+
+.chart-pie {
+  position: relative;
+  height: 300px;
+}
+
 .chart-container {
   position: relative;
   height: 250px;
@@ -19,12 +100,19 @@
   margin-bottom: 0;
 }
 
-/* Style for the table */
+/* Responsive table improvements */
 .table-responsive {
+  border-radius: 0.35rem;
   overflow-x: auto;
 }
 
 .table th {
+  border-top: 0;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #6c757d;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
   background-color: #f8f9fa;
 }
 
@@ -32,17 +120,131 @@
   vertical-align: middle;
 }
 
+.table-sm th,
+.table-sm td {
+  padding: 0.5rem;
+  font-size: 0.875rem;
+}
+
+/* Hover effects */
+.card:hover {
+  transform: translateY(-2px);
+  transition: all 0.3s ease;
+  box-shadow: 0 0.25rem 2rem 0 rgba(58, 59, 69, 0.2) !important;
+}
+
+.table-hover tbody tr:hover {
+  background-color: rgba(0, 0, 0, 0.025);
+}
+
+/* Legend improvements */
+.legend-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Progress bar animations */
+.progress-bar {
+  transition: width 0.6s ease;
+}
+
+/* Loading improvements */
+.spinner-border {
+  width: 3rem;
+  height: 3rem;
+}
+
+/* Badge improvements */
+.badge {
+  font-size: 0.75em;
+}
+
+/* Data quality indicators */
+.progress {
+  height: 6px;
+  background-color: #e9ecef;
+  border-radius: 3px;
+}
+
+/* Compact chart containers */
+.card-body > div[style*="height: 150px"] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Animation for cards */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.card {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+/* Stagger animation for multiple cards */
+.row .col-lg-3:nth-child(1) .card { animation-delay: 0.1s; }
+.row .col-lg-3:nth-child(2) .card { animation-delay: 0.2s; }
+.row .col-lg-3:nth-child(3) .card { animation-delay: 0.3s; }
+.row .col-lg-3:nth-child(4) .card { animation-delay: 0.4s; }
+
+/* Custom scrollbar for tables */
+.table-responsive::-webkit-scrollbar {
+  height: 8px;
+}
+
+.table-responsive::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 10px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
-  .chart-container {
-    height: 200px;
+  .chart-container, .chart-area {
+    height: 300px;
   }
   
-  .card-title {
-    font-size: 1.5rem;
+  .chart-pie {
+    height: 250px;
+  }
+  
+  .card-title, .h5 {
+    font-size: 1.1rem;
   }
   
   .row.mb-4 .col-md-4:not(:last-child) {
     margin-bottom: 1rem;
+  }
+  
+  .table-responsive {
+    font-size: 0.8rem;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .text-gray-800 {
+    color: #e9ecef !important;
+  }
+  
+  .text-gray-300 {
+    color: #6c757d !important;
   }
 }

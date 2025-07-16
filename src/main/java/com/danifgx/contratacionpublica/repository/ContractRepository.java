@@ -289,4 +289,104 @@ public interface ContractRepository extends JpaRepository<Contract, UUID> {
            "ORDER BY COALESCE(NULLIF(c.totalAmount, 0), NULLIF(c.taxExclusiveAmount, 0), c.estimatedAmount) DESC NULLS LAST")
     Page<Contract> findByGlobalSearchOrderByEffectiveAmountDesc(@Param("query") String query, Pageable pageable);
 
+    /**
+     * Get comprehensive amount statistics.
+     */
+    @Query("SELECT " +
+           "COALESCE(SUM(COALESCE(NULLIF(c.totalAmount, 0), NULLIF(c.taxExclusiveAmount, 0), c.estimatedAmount)), 0) as totalAmount, " +
+           "COALESCE(ROUND(AVG(COALESCE(NULLIF(c.totalAmount, 0), NULLIF(c.taxExclusiveAmount, 0), c.estimatedAmount)), 2), 0) as averageAmount, " +
+           "COALESCE(MAX(COALESCE(NULLIF(c.totalAmount, 0), NULLIF(c.taxExclusiveAmount, 0), c.estimatedAmount)), 0) as maxAmount, " +
+           "COALESCE(MIN(COALESCE(NULLIF(c.totalAmount, 0), NULLIF(c.taxExclusiveAmount, 0), c.estimatedAmount)), 0) as minAmount, " +
+           "SUM(CASE WHEN COALESCE(NULLIF(c.totalAmount, 0), NULLIF(c.taxExclusiveAmount, 0), c.estimatedAmount) IS NOT NULL THEN 1 ELSE 0 END) as contractsWithAmount, " +
+           "SUM(CASE WHEN COALESCE(NULLIF(c.totalAmount, 0), NULLIF(c.taxExclusiveAmount, 0), c.estimatedAmount) IS NULL THEN 1 ELSE 0 END) as contractsWithoutAmount, " +
+           "ROUND((SUM(CASE WHEN COALESCE(NULLIF(c.totalAmount, 0), NULLIF(c.taxExclusiveAmount, 0), c.estimatedAmount) IS NOT NULL THEN 1 ELSE 0 END) * 100.0 / COUNT(c)), 2) as amountCoverage " +
+           "FROM Contract c")
+    List<Object[]> getAmountStatistics();
+
+    /**
+     * Get monthly trends of contracts and amounts.
+     */
+    @Query(value = "SELECT " +
+           "EXTRACT(YEAR FROM updated_at) as year, " +
+           "EXTRACT(MONTH FROM updated_at) as month, " +
+           "COUNT(*) as contractCount, " +
+           "COALESCE(SUM(COALESCE(NULLIF(total_amount, 0), NULLIF(tax_exclusive_amount, 0), estimated_amount)), 0) as totalAmount " +
+           "FROM contracts " +
+           "WHERE updated_at IS NOT NULL " +
+           "GROUP BY EXTRACT(YEAR FROM updated_at), EXTRACT(MONTH FROM updated_at) " +
+           "ORDER BY year DESC, month DESC " +
+           "LIMIT 24", nativeQuery = true)
+    List<Object[]> getMonthlyTrends();
+
+    /**
+     * Get contract value distribution by size categories.
+     */
+    @Query("SELECT " +
+           "CASE " +
+           "   WHEN COALESCE(NULLIF(c.totalAmount, 0), NULLIF(c.taxExclusiveAmount, 0), c.estimatedAmount) < 40000 THEN 'microContracts' " +
+           "   WHEN COALESCE(NULLIF(c.totalAmount, 0), NULLIF(c.taxExclusiveAmount, 0), c.estimatedAmount) < 144000 THEN 'smallContracts' " +
+           "   WHEN COALESCE(NULLIF(c.totalAmount, 0), NULLIF(c.taxExclusiveAmount, 0), c.estimatedAmount) < 750000 THEN 'mediumContracts' " +
+           "   ELSE 'largeContracts' " +
+           "END as range, " +
+           "COUNT(c) " +
+           "FROM Contract c " +
+           "WHERE COALESCE(NULLIF(c.totalAmount, 0), NULLIF(c.taxExclusiveAmount, 0), c.estimatedAmount) IS NOT NULL " +
+           "GROUP BY range")
+    List<Object[]> getContractValueDistribution();
+
+    /**
+     * Get top regions by total contract value.
+     */
+    @Query("SELECT " +
+           "c.countrySubentity as region, " +
+           "COALESCE(SUM(COALESCE(NULLIF(c.totalAmount, 0), NULLIF(c.taxExclusiveAmount, 0), c.estimatedAmount)), 0) as totalAmount, " +
+           "COUNT(c) as contractCount, " +
+           "COALESCE(ROUND(AVG(COALESCE(NULLIF(c.totalAmount, 0), NULLIF(c.taxExclusiveAmount, 0), c.estimatedAmount)), 2), 0) as averageAmount " +
+           "FROM Contract c " +
+           "WHERE c.countrySubentity IS NOT NULL " +
+           "GROUP BY c.countrySubentity " +
+           "ORDER BY totalAmount DESC")
+    List<Object[]> getTopRegionsByValue();
+
+    /**
+     * Get contract type vs amount analysis.
+     */
+    @Query("SELECT " +
+           "COALESCE(c.typeCode, 'Unknown') as typeCode, " +
+           "COUNT(c) as contractCount, " +
+           "COALESCE(SUM(COALESCE(NULLIF(c.totalAmount, 0), NULLIF(c.taxExclusiveAmount, 0), c.estimatedAmount)), 0) as totalAmount, " +
+           "COALESCE(ROUND(AVG(COALESCE(NULLIF(c.totalAmount, 0), NULLIF(c.taxExclusiveAmount, 0), c.estimatedAmount)), 2), 0) as averageAmount, " +
+           "COALESCE(MAX(COALESCE(NULLIF(c.totalAmount, 0), NULLIF(c.taxExclusiveAmount, 0), c.estimatedAmount)), 0) as maxAmount " +
+           "FROM Contract c " +
+           "GROUP BY c.typeCode " +
+           "ORDER BY totalAmount DESC")
+    List<Object[]> getTypeAmountAnalysis();
+
+    /**
+     * Get source efficiency statistics.
+     */
+    @Query("SELECT " +
+           "COALESCE(c.source, 'Unknown') as source, " +
+           "COUNT(c) as contractCount, " +
+           "COALESCE(SUM(COALESCE(NULLIF(c.totalAmount, 0), NULLIF(c.taxExclusiveAmount, 0), c.estimatedAmount)), 0) as totalAmount, " +
+           "COALESCE(ROUND(AVG(COALESCE(NULLIF(c.totalAmount, 0), NULLIF(c.taxExclusiveAmount, 0), c.estimatedAmount)), 2), 0) as averageAmount, " +
+           "ROUND((SUM(CASE WHEN COALESCE(NULLIF(c.totalAmount, 0), NULLIF(c.taxExclusiveAmount, 0), c.estimatedAmount) IS NOT NULL THEN 1 ELSE 0 END) * 100.0 / COUNT(c)), 2) as amountCoverage " +
+           "FROM Contract c " +
+           "GROUP BY c.source " +
+           "ORDER BY totalAmount DESC")
+    List<Object[]> getSourceEfficiencyStats();
+
+    /**
+     * Get recent activity statistics (last 30 and 7 days).
+     * Uses native query since HQL doesn't support date intervals well.
+     */
+    @Query(value = "SELECT " +
+           "SUM(CASE WHEN updated_at >= CURRENT_DATE - INTERVAL '30 days' THEN 1 ELSE 0 END) as contractsLast30Days, " +
+           "SUM(CASE WHEN updated_at >= CURRENT_DATE - INTERVAL '7 days' THEN 1 ELSE 0 END) as contractsLast7Days, " +
+           "COALESCE(SUM(CASE WHEN updated_at >= CURRENT_DATE - INTERVAL '30 days' THEN COALESCE(NULLIF(total_amount, 0), NULLIF(tax_exclusive_amount, 0), estimated_amount) ELSE 0 END), 0) as amountLast30Days, " +
+           "COALESCE(SUM(CASE WHEN updated_at >= CURRENT_DATE - INTERVAL '7 days' THEN COALESCE(NULLIF(total_amount, 0), NULLIF(tax_exclusive_amount, 0), estimated_amount) ELSE 0 END), 0) as amountLast7Days, " +
+           "ROUND(SUM(CASE WHEN updated_at >= CURRENT_DATE - INTERVAL '30 days' THEN 1 ELSE 0 END)::decimal / 30.0, 2) as avgDailyContracts " +
+           "FROM contracts", nativeQuery = true)
+    List<Object[]> getRecentActivityStats();
+
 }
